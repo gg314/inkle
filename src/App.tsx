@@ -310,7 +310,7 @@ function App() {
       <div className="flex md:hidden min-h-screen flex-col bg-background">
         {/* Hero */}
         <div className="px-6 pt-12 pb-8 text-center">
-          <h1 className="text-3xl font-bold tracking-tight mb-3 text-foreground">
+          <h1 className="text-3xl font-bold tracking-tight mb-3 text-foreground font-display">
             Inkle Pattern Designer
           </h1>
           <p className="text-muted-foreground text-base leading-relaxed">
@@ -345,7 +345,7 @@ function App() {
 
         {/* Features */}
         <div className="px-6 pt-8 pb-8">
-          <h2 className="text-lg font-semibold mb-4 text-foreground">
+          <h2 className="text-lg font-semibold mb-4 text-foreground font-display">
             What you can do
           </h2>
           <div className="grid grid-cols-2 gap-3">
@@ -414,7 +414,7 @@ function App() {
 
         {/* PDF Resources */}
         <div className="bg-muted px-6 pt-8 pb-8">
-          <h2 className="text-lg font-semibold mb-1 text-foreground">
+          <h2 className="text-lg font-semibold mb-1 text-foreground font-display">
             Resources
           </h2>
           <p className="text-sm text-muted-foreground mb-4">
@@ -506,7 +506,7 @@ function App() {
       {/* Desktop view */}
       <div className="hidden h-screen flex-col md:flex">
         <div className="flex flex-col items-start justify-between space-y-2 py-4 sm:flex-row sm:items-center sm:space-y-0 md:h-16 px-4">
-          <h2 className="text-lg whitespace-nowrap font-light">
+          <h2 className="text-lg whitespace-nowrap font-light font-display">
             Inkle Pattern Designer
           </h2>
           <div className="ml-auto flex w-full space-x-2 sm:justify-end">
