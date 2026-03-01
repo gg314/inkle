@@ -3,13 +3,16 @@ import { ALL_COLORS, presetPatterns } from "@/assets/presets/presets";
 import "./App.css";
 import {
 	ChevronDownIcon,
+	ColorWheelIcon,
 	CopyIcon,
 	Cross2Icon,
 	DownloadIcon,
+	EyeOpenIcon,
 	FileTextIcon,
 	GitHubLogoIcon,
 	HeartIcon,
 	MinusIcon,
+	Pencil2Icon,
 	PlusIcon,
 	ResetIcon,
 	UploadIcon,
@@ -337,43 +340,43 @@ function App() {
 				{/* Features */}
 				<div className="px-6 pb-8">
 					<h2 className="text-lg font-semibold mb-4">What you can do</h2>
-					<ul className="space-y-3 text-sm">
-						<li>
-							<span className="font-medium">Design warping drafts</span>
-							<span className="text-muted-foreground">
-								{" "}
-								— lay out H and U rows visually, add and remove warps as you go
-							</span>
-						</li>
-						<li>
-							<span className="font-medium">Pick thread colors</span>
-							<span className="text-muted-foreground">
-								{" "}
-								— choose from 100+ DMC colors or add your own custom hex colors
-							</span>
-						</li>
-						<li>
-							<span className="font-medium">Preview the woven band</span>
-							<span className="text-muted-foreground">
-								{" "}
-								— see a live simulation of how the finished band will look
-							</span>
-						</li>
-						<li>
-							<span className="font-medium">Mirror and repeat</span>
-							<span className="text-muted-foreground">
-								{" "}
-								— mirror your pattern horizontally and define repeating sections
-							</span>
-						</li>
-						<li>
-							<span className="font-medium">Save your work</span>
-							<span className="text-muted-foreground">
-								{" "}
-								— download patterns as JSON and reload them anytime
-							</span>
-						</li>
-					</ul>
+					<div className="grid grid-cols-2 gap-3">
+						<div className="rounded-lg border p-4">
+							<Pencil2Icon className="h-5 w-5 text-muted-foreground mb-2" />
+							<div className="font-medium text-sm mb-1">Design drafts</div>
+							<div className="text-xs text-muted-foreground leading-relaxed">
+								Lay out H and U rows, add and remove warps
+							</div>
+						</div>
+						<div className="rounded-lg border p-4">
+							<ColorWheelIcon className="h-5 w-5 text-muted-foreground mb-2" />
+							<div className="font-medium text-sm mb-1">Pick colors</div>
+							<div className="text-xs text-muted-foreground leading-relaxed">
+								100+ DMC colors or custom hex values
+							</div>
+						</div>
+						<div className="rounded-lg border p-4">
+							<EyeOpenIcon className="h-5 w-5 text-muted-foreground mb-2" />
+							<div className="font-medium text-sm mb-1">Live preview</div>
+							<div className="text-xs text-muted-foreground leading-relaxed">
+								See a simulation of the finished woven band
+							</div>
+						</div>
+						<div className="rounded-lg border p-4">
+							<CopyIcon className="h-5 w-5 text-muted-foreground mb-2" />
+							<div className="font-medium text-sm mb-1">Mirror & repeat</div>
+							<div className="text-xs text-muted-foreground leading-relaxed">
+								Mirror horizontally and define repeat sections
+							</div>
+						</div>
+						<div className="rounded-lg border p-4 col-span-2">
+							<DownloadIcon className="h-5 w-5 text-muted-foreground mb-2" />
+							<div className="font-medium text-sm mb-1">Save your work</div>
+							<div className="text-xs text-muted-foreground leading-relaxed">
+								Download patterns as JSON and reload them anytime
+							</div>
+						</div>
+					</div>
 				</div>
 
 				{/* PDF Resources */}
