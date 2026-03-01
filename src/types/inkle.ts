@@ -2,6 +2,7 @@ export type Color = {
   name: string;
   hex: string;
   owned: boolean;
+  isCustom?: boolean;
 };
 
 export type PatternRow = {

@@ -1,3 +1,3 @@
-# Inkle Loom Pattern Generator
+# Inkle Pattern Designer
 
 A Typescript/React app to help design bands that can be weaved on an inkle loom.

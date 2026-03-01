@@ -61,9 +61,6 @@ export function expandData(
 ): PatternRow[] {
   // Adjust the repeater groups
   const adjustedRepeaterGroups = expandRepeaterGroups(repeaterGroups);
-  console.log("HELLO:");
-  console.log(JSON.stringify(adjustedRepeaterGroups));
-  console.log("GOODBYE");
 
   // Deep copy the rows to avoid mutating the original data
   const expandedRows = rows.map((row) => ({ ...row, colors: [...row.colors] }));

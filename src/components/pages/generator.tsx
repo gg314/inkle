@@ -1,20 +1,7 @@
 // ColorBox.tsx
-import { Fragment, useCallback, useState } from "react";
+import { useCallback, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import ColorBox from "@/components/colorbox";
 import { Color, PatternRow, Repeater } from "@/types/inkle";
@@ -31,7 +18,6 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { mirrorData } from "@/lib/inkle";
@@ -96,13 +82,13 @@ const RandomGenerator = ({
         : [...startingPalette]
             .sort(() => 0.5 - Math.random())
             .slice(0, numberOfColors);
-    let bands = outerBands.map((c) => getRandomColor(c, palette));
-    let warps = Array(numberOfWarpThreads)
+    const bands = outerBands.map((c) => getRandomColor(c, palette));
+    const warps = Array(numberOfWarpThreads)
       .fill("random")
       .map((c) => getRandomColor(c, palette));
 
-    let row1Colors = bands.flatMap((item) => [item, null]);
-    let row2Colors = bands.flatMap((item) => [null, item]);
+    const row1Colors = bands.flatMap((item) => [item, null]);
+    const row2Colors = bands.flatMap((item) => [null, item]);
     warps.forEach((warp, index) => {
       if (index % 2 === 0) {
         row1Colors.push(warp);
@@ -112,11 +98,11 @@ const RandomGenerator = ({
         row2Colors.push(warp);
       }
     });
-    let row1 = {
+    const row1 = {
       label: "H",
       colors: row1Colors,
     };
-    let row2 = {
+    const row2 = {
       label: "U",
       colors: row2Colors,
     };
@@ -137,81 +123,97 @@ const RandomGenerator = ({
       </div>
       <div className="mb-8">
         <form
-          className="grid w-full items-start gap-6 overflow-auto p-4 pt-0"
+          className="grid w-full items-start gap-6 overflow-auto"
           onSubmit={generateData}
         >
           <fieldset className="grid gap-6 rounded-lg border p-4">
             <legend className="-ml-1 px-1 text-sm font-medium">Colors</legend>
-            <div className="grid gap-3">
-              <Label htmlFor="colors-to-use">Color palette</Label>
-              <Select
-                onValueChange={setColorPalette}
-                defaultValue={colorPalette}
-              >
-                <SelectTrigger className="w-[240px]">
-                  {(() => {
-                    switch (colorPalette) {
-                      case "all":
-                        return "All colors";
-                      default:
-                        return "Available colors";
-                    }
-                  })()}
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">
-                    <div>All colors</div>
-                    <span className="text-muted-foreground">...</span>
-                  </SelectItem>
-                  <SelectItem value="available">
-                    <div>
-                      <span>Available colors</span>
-                      <div className="text-muted-foreground">...</div>
-                    </div>
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-3">
+                <div>
+                  <Label htmlFor="colors-to-use">Color palette</Label>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Which colors to randomly select
+                  </p>
+                </div>
+                <Select
+                  onValueChange={setColorPalette}
+                  defaultValue={colorPalette}
+                >
+                  <SelectTrigger>
+                    {(() => {
+                      switch (colorPalette) {
+                        case "all":
+                          return "All colors";
+                        default:
+                          return "Available colors";
+                      }
+                    })()}
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">
+                      <div>All colors</div>
+                      <span className="text-muted-foreground">{colors.length} colors</span>
+                    </SelectItem>
+                    <SelectItem value="available">
+                      <div>
+                        <span>Available colors</span>
+                        <div className="text-muted-foreground">{colors.filter((c) => c.owned).length} colors</div>
+                      </div>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
-            <div className="grid gap-3">
-              <Label htmlFor="number-of-colors">Number of colors to use</Label>
-              <Input
-                type="number"
-                id="number-of-colors"
-                className="w-[240px]"
-                placeholder="Number of colors"
-                value={numberOfColors}
-                onChange={(e) => {
-                  const value = parseInt(e.target.value);
-                  const boundedValue = Math.min(50, Math.max(1, value));
-                  setNumberOfColors(boundedValue);
-                }}
-              />
+              <div className="grid gap-3">
+                <div>
+                  <Label htmlFor="number-of-colors">Number of colors</Label>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Limit palette for cohesive designs
+                  </p>
+                </div>
+                <Input
+                  type="number"
+                  id="number-of-colors"
+                  placeholder="Number of colors"
+                  value={numberOfColors}
+                  onChange={(e) => {
+                    const value = parseInt(e.target.value);
+                    const boundedValue = Math.min(50, Math.max(1, value));
+                    setNumberOfColors(boundedValue);
+                  }}
+                />
+              </div>
             </div>
           </fieldset>
 
           <fieldset className="grid gap-6 rounded-lg border p-4">
             <legend className="-ml-1 px-1 text-sm font-medium">Warp</legend>
-            <div className="flex items-center space-x-2">
-              <Button
-                className="mr-2"
-                variant={"outline"}
-                onClick={addOuterBand}
-              >
-                <PlusIcon className="mr-2 h-4 w-4" />
-                Add outer band
-              </Button>
-              <Button
-                className="mr-2"
-                variant={"outline"}
-                onClick={removeOuterBand}
-                disabled={outerBands.length <= 0}
-              >
-                <MinusIcon className="mr-2 h-4 w-4" />
-                Remove outer band
-              </Button>
+            <div>
+              <div className="flex items-center space-x-2">
+                <Button
+                  className="mr-2"
+                  variant={"outline"}
+                  onClick={addOuterBand}
+                >
+                  <PlusIcon className="mr-2 h-4 w-4" />
+                  Add outer band
+                </Button>
+                <Button
+                  className="mr-2"
+                  variant={"outline"}
+                  onClick={removeOuterBand}
+                  disabled={outerBands.length <= 0}
+                >
+                  <MinusIcon className="mr-2 h-4 w-4" />
+                  Remove outer band
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground mt-2">
+                Outer bands create solid vertical lines on the edges
+              </p>
             </div>
-            <div className="px-2">
+            <div>
               {outerBands.map((color, idx) => (
                 <div key={idx} className="inline-block mr-1.5">
                   <ColorBox
@@ -226,7 +228,12 @@ const RandomGenerator = ({
             </div>
             <Separator />
             <div className="grid gap-3">
-              <Label htmlFor="number-of-inner">Number of warp threads</Label>
+              <div>
+                <Label htmlFor="number-of-inner">Number of warp threads</Label>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Random pattern area between outer bands
+                </p>
+              </div>
               <Input
                 type="number"
                 id="number-of-inner"
@@ -248,21 +255,24 @@ const RandomGenerator = ({
                 checked={useMirror}
                 onClick={() => setUseMirror(!useMirror)}
               />
-              <Label htmlFor="mirror">Mirror pattern horizontally</Label>
+              <div>
+                <Label htmlFor="mirror">Mirror pattern horizontally</Label>
+                <p className="text-xs text-muted-foreground">
+                  Creates symmetrical designs
+                </p>
+              </div>
             </div>
           </fieldset>
 
-          <div className="mb-4">
-            <Button className="mr-2">
-              <ShuffleIcon className="mr-2 h-4 w-4" />
-              Generate
-            </Button>
-          </div>
+          <Button className="w-fit">
+            <ShuffleIcon className="mr-2 h-4 w-4" />
+            Generate
+          </Button>
         </form>
 
-        <Alert>
+        <Alert className="mt-6">
           <RocketIcon className="h-4 w-4" />
-          <AlertTitle>Pro tip!</AlertTitle>
+          <AlertTitle>Pro tip</AlertTitle>
           <AlertDescription>
             Return to the band designer to further customize your pattern.
           </AlertDescription>

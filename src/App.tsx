@@ -1,19 +1,20 @@
-import { Slider } from "@/components/ui/slider";
 import { ALL_COLORS, presetPatterns } from "@/assets/presets/presets";
-import { Fragment, useCallback, useEffect, useState } from "react";
+import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import "./App.css";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import {
-  ChevronRightIcon,
-  ChevronLeftIcon,
   ResetIcon,
-  SwitchIcon,
   CopyIcon,
-  ShuffleIcon,
   PlusIcon,
   MinusIcon,
+  Cross2Icon,
   HeartIcon,
+  UploadIcon,
+  DownloadIcon,
+  ChevronDownIcon,
+  GitHubLogoIcon,
+  FileTextIcon,
 } from "@radix-ui/react-icons";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -21,24 +22,31 @@ import {
   ResizablePanel,
   ResizablePanelGroup,
 } from "@/components/ui/resizable";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Color, PatternRow, PresetPattern, Repeater } from "@/types/inkle";
 import Pattern from "@/components/pattern";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
 import ColorBox from "@/components/colorbox";
 import { Checkbox } from "@/components/ui/checkbox";
-import { cn } from "@/lib/utils";
 import {
   groupNonOverlappingRepeaters,
   mirrorData,
@@ -46,12 +54,13 @@ import {
 } from "@/lib/inkle";
 import RandomGenerator from "@/components/pages/generator";
 import ColorSettings from "@/components/pages/colors";
-import PresetSelector from "@/components/presetSelector";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 
 const BLANK_BUTTON = (
   <div
-    className="rounded-none border-none opacity-30 h-8 w-8 p-0 inline-block"
+    className="rounded-none border-none opacity-30 h-8 w-8 p-0 inline-block flex-shrink-0"
     style={{
       background:
         "repeating-linear-gradient(-45deg, rgba(0, 0, 0, .1), rgba(0, 0, 0, .1) 4px, rgba(0, 0, 0, .4) 4px, rgba(0, 0, 0, .4) 8px)",
@@ -60,9 +69,12 @@ const BLANK_BUTTON = (
 );
 
 function App() {
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [useMirror, setUseMirror] = useState(false);
   const [useShadow, setUseShadow] = useState(true);
+  const [patternTitle, setPatternTitle] = useState("");
   const [colors, setColors] = useState<Color[]>(ALL_COLORS);
+  const [clearDialogOpen, setClearDialogOpen] = useState(false);
   const [rows, setRows] = useState<PatternRow[]>(
     presetPatterns[presetPatterns.length - 1].band
   );
@@ -106,6 +118,15 @@ function App() {
   //   { count: 3, start: 7, end: 9 },
   // ]);
 
+  // Update document title when pattern title changes
+  useEffect(() => {
+    if (patternTitle.trim()) {
+      document.title = `${patternTitle} - Inkle Pattern Designer`;
+    } else {
+      document.title = "Inkle Pattern Designer";
+    }
+  }, [patternTitle]);
+
   // add nulls to the end of each pattern row
   const addColor = useCallback(() => {
     setRows((oldRows) =>
@@ -140,6 +161,19 @@ function App() {
     setUseMirror(false);
   };
 
+  const isValidRepeater = (repeater: Repeater): boolean => {
+    // Start must be less than end
+    if (repeater.start >= repeater.end) return false;
+
+    // The range must include an even number of positions
+    // This ensures we have equal H and U threads in the repeat
+    const rangeLength = repeater.end - repeater.start;
+    return rangeLength % 2 === 0;
+  };
+
+  // Filter out invalid repeaters for display purposes
+  const validRepeaters = repeaters.filter(isValidRepeater);
+
   const toggleColorOwned = (color: Color) => {
     const updatedColors = colors.map((c) => {
       if (c.name === color.name) {
@@ -150,38 +184,251 @@ function App() {
     setColors(updatedColors);
   };
 
+  const toggleAllColors = () => {
+    const allOwned = colors.every((c) => c.owned);
+    const updatedColors = colors.map((c) => ({
+      ...c,
+      owned: !allOwned,
+    }));
+    setColors(updatedColors);
+  };
+
+  const addColorToLibrary = (name: string, hex: string) => {
+    const newColor: Color = {
+      name,
+      hex,
+      owned: true,
+      isCustom: true,
+    };
+    setColors([...colors, newColor]);
+  };
+
+  const deleteColor = (colorToDelete: Color) => {
+    if (!colorToDelete.isCustom) return;
+
+    // Remove the color from the colors array
+    const updatedColors = colors.filter((c) => c.name !== colorToDelete.name);
+
+    // Update rows to replace deleted color with null
+    const updatedRows = rows.map((row) => ({
+      ...row,
+      colors: row.colors.map((c) =>
+        c && c.name === colorToDelete.name ? null : c
+      ),
+    }));
+
+    setColors(updatedColors);
+    setRows(updatedRows);
+  };
+
   const setPreset = (preset: PresetPattern) => {
     setRows(preset.band);
     setRepeaters(preset.repeaters);
   };
 
+  const confirmClearPattern = () => {
+    setRows([
+      {
+        label: "H",
+        colors: [null, null, null, null, null],
+      },
+      {
+        label: "U",
+        colors: [null, null, null, null, null],
+      },
+    ]);
+    setRepeaters([]);
+    setUseMirror(false);
+    setClearDialogOpen(false);
+  };
+
+  const savePattern = () => {
+    const patternData = {
+      version: "1.0",
+      title: patternTitle,
+      colors: colors,
+      band: rows,
+      repeaters: repeaters,
+      useMirror: useMirror,
+      useShadow: useShadow,
+      savedAt: new Date().toISOString(),
+    };
+
+    const jsonString = JSON.stringify(patternData, null, 2);
+    const blob = new Blob([jsonString], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `${patternTitle || "inkle-pattern"}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  const loadPattern = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const content = e.target?.result as string;
+        const patternData = JSON.parse(content);
+
+        // Validate the data structure
+        if (!patternData.version || !patternData.band) {
+          alert("Invalid pattern file format");
+          return;
+        }
+
+        // Restore all settings
+        if (patternData.title) setPatternTitle(patternData.title);
+        if (patternData.colors) setColors(patternData.colors);
+        if (patternData.band) setRows(patternData.band);
+        if (patternData.repeaters) setRepeaters(patternData.repeaters);
+        if (patternData.useMirror !== undefined) setUseMirror(patternData.useMirror);
+        if (patternData.useShadow !== undefined) setUseShadow(patternData.useShadow);
+      } catch (error) {
+        alert("Error loading pattern file: " + (error as Error).message);
+      }
+    };
+    reader.readAsText(file);
+    // Reset the input value so the same file can be loaded again
+    event.target.value = "";
+  };
+
   return (
     <>
-      <div className="hidden h-full flex-col md:flex">
+      {/* Mobile view */}
+      <div className="flex md:hidden min-h-screen items-center justify-center p-6 bg-background">
+        <div className="max-w-md space-y-6 text-center">
+          <h1 className="text-3xl font-bold tracking-tight">
+            Inkle Pattern Designer
+          </h1>
+          <p className="text-muted-foreground">
+            This application requires a larger screen to design patterns. Please visit on a desktop or tablet device.
+          </p>
+          <div className="space-y-3 pt-4">
+            <p className="text-sm font-medium">Helpful Resources:</p>
+            <div className="flex flex-col gap-2">
+              <Button asChild variant="outline" className="w-full">
+                <a href="/inkle-loom-pattern-standard.pdf" target="_blank" rel="noopener noreferrer">
+                  <FileTextIcon className="mr-2 h-4 w-4" />
+                  Blank Pattern Template (PDF)
+                </a>
+              </Button>
+              <Button asChild variant="outline" className="w-full">
+                <a href="/inkle-loom-plans.pdf" target="_blank" rel="noopener noreferrer">
+                  <FileTextIcon className="mr-2 h-4 w-4" />
+                  Build an Inkle Loom (PDF)
+                </a>
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Desktop view */}
+      <div className="hidden h-screen flex-col md:flex">
         <div className="flex flex-col items-start justify-between space-y-2 py-4 sm:flex-row sm:items-center sm:space-y-0 md:h-16 px-4">
           <h2 className="text-lg whitespace-nowrap font-light">
-            Inkle Pattern Generator
+            Inkle Pattern Designer
           </h2>
           <div className="ml-auto flex w-full space-x-2 sm:justify-end">
-            <PresetSelector setPresetFn={setPreset} />
-            <Button variant="ghost">
-              <CopyIcon className="h-4 w-4 mr-2" />
-              Save
-            </Button>
-            <Button variant="ghost">
-              <HeartIcon className="h-4 w-4 mr-2" />
-              Support
-            </Button>
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={loadPattern}
+              accept=".json"
+              style={{ display: "none" }}
+            />
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost">
+                  Manage Project
+                  <ChevronDownIcon className="ml-2 h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuItem onClick={savePattern}>
+                  <DownloadIcon className="mr-2 h-4 w-4" />
+                  Save Pattern...
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => fileInputRef.current?.click()}>
+                  <UploadIcon className="mr-2 h-4 w-4" />
+                  Load Pattern...
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuSub>
+                  <DropdownMenuSubTrigger>
+                    <CopyIcon className="mr-2 h-4 w-4" />
+                    Load Preset
+                  </DropdownMenuSubTrigger>
+                  <DropdownMenuSubContent className="w-48">
+                    {presetPatterns.map((preset, idx) => (
+                      <DropdownMenuItem
+                        key={idx}
+                        onClick={() => setPreset(preset)}
+                      >
+                        {preset.name}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuSubContent>
+                </DropdownMenuSub>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => setClearDialogOpen(true)}>
+                  <ResetIcon className="mr-2 h-4 w-4" />
+                  Clear Pattern
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost">
+                  Resources
+                  <ChevronDownIcon className="ml-2 h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-64">
+                <DropdownMenuItem asChild>
+                  <a href="#" target="_blank" rel="noopener noreferrer" className="cursor-pointer">
+                    <GitHubLogoIcon className="mr-2 h-4 w-4" />
+                    Source Code
+                  </a>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <a href="#" target="_blank" rel="noopener noreferrer" className="cursor-pointer">
+                    <HeartIcon className="mr-2 h-4 w-4" />
+                    Support
+                  </a>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuLabel>Downloads</DropdownMenuLabel>
+                <DropdownMenuItem asChild>
+                  <a href="/inkle-loom-plans.pdf" target="_blank" rel="noopener noreferrer" className="cursor-pointer">
+                    <FileTextIcon className="mr-2 h-4 w-4" />
+                    Build an Inkle Loom (PDF)
+                  </a>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <a href="/inkle-loom-pattern-standard.pdf" target="_blank" rel="noopener noreferrer" className="cursor-pointer">
+                    <FileTextIcon className="mr-2 h-4 w-4" />
+                    Blank Pattern Template (PDF)
+                  </a>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
         <Separator />
 
         <ResizablePanelGroup
           direction="horizontal"
-          className="min-h-[200px] rounded-lg  md:min-w-[450px]"
+          className="flex-1 rounded-lg md:min-w-[450px]"
         >
           <ResizablePanel defaultSize={75}>
-            <div className="p-10">
+            <div className="p-10 overflow-y-auto h-full">
               <div>
                 <div className="flex h-full justify-center">
                   <Tabs defaultValue="designer" style={{ width: "100%" }}>
@@ -193,7 +440,8 @@ function App() {
                         <TabsTrigger value="generator">
                           Random Generator
                         </TabsTrigger>
-                        <TabsTrigger value="colors">Color Settings</TabsTrigger>
+                        <TabsTrigger value="colors">Available Colors</TabsTrigger>
+                        <TabsTrigger value="settings">Settings</TabsTrigger>
                       </TabsList>
                     </div>
                     <TabsContent value="designer">
@@ -209,83 +457,85 @@ function App() {
                             Warping draft
                           </h4>
 
-                          <div className="mb-6">
-                            {rows.map((row, rowIdx) => (
-                              <div
-                                key={rowIdx}
-                                className="flex items-center h-8"
-                              >
-                                <span className="weight-light p-2 text-muted-foreground w-8">
-                                  {row.label}
-                                </span>
-                                {row.colors.map((color, idx) => (
-                                  <Fragment key={idx}>
-                                    {color === null &&
-                                    (rowIdx + idx) % 2 === 1 ? (
-                                      BLANK_BUTTON
-                                    ) : (
-                                      <ColorBox
-                                        color={color}
-                                        colors={colors}
-                                        rowIdx={rowIdx}
-                                        colIdx={idx}
-                                        updateColorFn={updateColor}
-                                      />
-                                    )}
-                                  </Fragment>
-                                ))}
-                              </div>
-                            ))}
+                          <ScrollArea className="mb-6 w-full whitespace-nowrap border rounded-md">
+                            <div className="p-4">
+                              {rows.map((row, rowIdx) => (
+                                <div
+                                  key={rowIdx}
+                                  className="flex items-center h-8 flex-nowrap"
+                                >
+                                  <span className="weight-light p-2 text-muted-foreground w-8 flex-shrink-0">
+                                    {row.label}
+                                  </span>
+                                  {row.colors.map((color, idx) => (
+                                    <Fragment key={idx}>
+                                      {color === null &&
+                                        (rowIdx + idx) % 2 === 1 ? (
+                                        BLANK_BUTTON
+                                      ) : (
+                                        <ColorBox
+                                          color={color}
+                                          colors={colors}
+                                          rowIdx={rowIdx}
+                                          colIdx={idx}
+                                          updateColorFn={updateColor}
+                                        />
+                                      )}
+                                    </Fragment>
+                                  ))}
+                                </div>
+                              ))}
 
-                            {groupNonOverlappingRepeaters(repeaters).map(
-                              (repeaterGroup, idx) => {
-                                let cursor = 0;
-                                return (
-                                  <div
-                                    className="flex items-center space-y-0"
-                                    key={idx}
-                                  >
-                                    <span className="w-8"></span>
-                                    {repeaterGroup.map((repeater, rIdx) => {
-                                      const test = Array.from({
-                                        length: repeater.start - cursor,
-                                      }).map((_, index) => (
-                                        <div
-                                          key={`row3-blank${index}`}
-                                          className="w-8"
-                                        ></div>
-                                      ));
-                                      cursor = repeater.end + 1;
+                              {groupNonOverlappingRepeaters(validRepeaters).map(
+                                (repeaterGroup, idx) => {
+                                  let cursor = 0;
+                                  return (
+                                    <div
+                                      className="flex items-center space-y-0 flex-nowrap"
+                                      key={idx}
+                                    >
+                                      <span className="w-8 flex-shrink-0"></span>
+                                      {repeaterGroup.map((repeater, rIdx) => {
+                                        const test = Array.from({
+                                          length: repeater.start - cursor,
+                                        }).map((_, index) => (
+                                          <div
+                                            key={`row3-blank${index}`}
+                                            className="w-8 flex-shrink-0"
+                                          ></div>
+                                        ));
+                                        cursor = repeater.end + 1;
 
-                                      const repeaterHtml = (
-                                        <div
-                                          style={{
-                                            width: `${
-                                              2 * repeaterLength(repeater)
-                                            }rem`,
-                                          }}
-                                          className={`flex items-center justify-center border-l border-r border-b border-gray-800 relative mt-2.5 h-3`}
-                                        >
-                                          <span className="px-0.5 z-10 text-sm text-gray-500 absolute bottom pb-1">
-                                            &times;{repeater.count}
-                                          </span>
-                                        </div>
-                                      );
-                                      return (
-                                        <div
-                                          className="flex space-x-0"
-                                          key={rIdx}
-                                        >
-                                          {test}
-                                          {repeaterHtml}
-                                        </div>
-                                      );
-                                    })}
-                                  </div>
-                                );
-                              }
-                            )}
-                          </div>
+                                        const repeaterHtml = (
+                                          <div
+                                            style={{
+                                              width: `${2 * repeaterLength(repeater)
+                                                }rem`,
+                                            }}
+                                            className={`flex items-center justify-center border-l border-r border-b border-gray-800 relative mt-2.5 h-3 flex-shrink-0`}
+                                          >
+                                            <span className="px-0.5 z-10 text-sm text-gray-500 absolute bottom pb-1">
+                                              &times;{repeater.count}
+                                            </span>
+                                          </div>
+                                        );
+                                        return (
+                                          <div
+                                            className="flex space-x-0 flex-shrink-0"
+                                            key={rIdx}
+                                          >
+                                            {test}
+                                            {repeaterHtml}
+                                          </div>
+                                        );
+                                      })}
+                                    </div>
+                                  );
+                                }
+                              )}
+                            </div>
+                            <ScrollBar orientation="horizontal" />
+                          </ScrollArea>
 
                           <div className="flex items-center space-x-2 mb-4">
                             <Button variant="outline" onClick={addColor}>
@@ -298,13 +548,6 @@ function App() {
                             >
                               <MinusIcon className="mr-2 h-4 w-4" /> Remove warp
                             </Button>
-                            <Button
-                              variant="outline"
-                              disabled
-                              onClick={addColor}
-                            >
-                              <PlusIcon className="mr-2 h-4 w-4" /> Add repeater
-                            </Button>
                           </div>
                           <div className="flex items-center space-x-2">
                             <Button
@@ -315,59 +558,131 @@ function App() {
                               <CopyIcon className="mr-2 h-4 w-4" />
                               Expand mirrored pattern
                             </Button>
-
-                            <Button variant="outline">
-                              <ResetIcon className="mr-2 h-4 w-4" />
-                              Clear pattern
-                            </Button>
                           </div>
-                        </div>
-
-                        <h4 className="scroll-m-20 text-xl font-semibold tracking-tight mb-4">
-                          Settings
-                        </h4>
-                        <div className="mb-8">
-                          Title ,, move Show Shadows to COlros tabs
                         </div>
 
                         <h4 className="scroll-m-20 text-xl font-semibold tracking-tight mb-4">
                           Options
                         </h4>
 
-                        <div className="flex items-center space-x-2 mb-4">
+                        <div className="flex items-start gap-3">
                           <Checkbox
                             id="use-mirror"
-                            className="p-0"
                             checked={useMirror}
                             onClick={() => setUseMirror(!useMirror)}
                           />
-                          <Label
-                            htmlFor="use-mirror"
-                            className="grid gap-0.5 leading-none text-sm font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                          >
-                            <span>Mirror pattern horizontally</span>
-                            <p className="text-sm text-muted-foreground">
+                          <div className="grid gap-2">
+                            <Label
+                              htmlFor="use-mirror">
+                              Mirror pattern horizontally</Label>
+                            <p className="text-muted-foreground text-sm">
                               Tip: start and finish in the "H" row
                             </p>
-                          </Label>
+                          </div>
                         </div>
 
-                        <div className="flex items-center space-x-2 mb-4">
-                          <Checkbox
-                            id="show-shadows"
-                            className="p-0"
-                            checked={useShadow}
-                            onClick={() => setUseShadow(!useShadow)}
-                          />
-                          <Label
-                            htmlFor="show-shadows"
-                            className="grid gap-0.5 leading-none text-sm font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                          >
-                            <span>Show shadows</span>
-                            <p className="text-sm text-muted-foreground">
-                              Simulate a 3D effect in the band preview
+                        <h4 className="scroll-m-20 text-xl font-semibold tracking-tight mb-4 mt-8">
+                          Repeaters
+                        </h4>
+                        <p className="text-sm text-muted-foreground mb-4">
+                          Repeaters duplicate a section of your pattern. The range must include an even number of positions (equal H and U threads).
+                        </p>
+
+                        <div className="mb-4">
+                          {repeaters.length === 0 ? (
+                            <p className="text-sm text-muted-foreground mb-4 italic">
+                              No repeaters defined yet.
                             </p>
-                          </Label>
+                          ) : (
+                            <div className="mb-4">
+                              {repeaters.map((repeater, idx) => {
+                                const isValid = isValidRepeater(repeater);
+                                const isLast = idx === repeaters.length - 1;
+                                return (
+                                  <div key={idx} className={`${!isLast ? 'border-b' : ''} ${!isValid ? 'bg-red-50' : ''}`}>
+                                    <div className="flex items-center gap-2 py-3">
+                                      <Label htmlFor={`repeater-${idx}-start`} className="text-sm font-normal whitespace-nowrap">
+                                        Start:
+                                      </Label>
+                                      <Input
+                                        id={`repeater-${idx}-start`}
+                                        type="number"
+                                        min={0}
+                                        max={rows[0].colors.length - 1}
+                                        value={repeater.start}
+                                        onChange={(e) => {
+                                          const newRepeaters = [...repeaters];
+                                          newRepeaters[idx].start = parseInt(e.target.value) || 0;
+                                          setRepeaters(newRepeaters);
+                                        }}
+                                        className="h-8 w-16"
+                                      />
+                                      <Label htmlFor={`repeater-${idx}-end`} className="text-sm font-normal whitespace-nowrap">
+                                        End:
+                                      </Label>
+                                      <Input
+                                        id={`repeater-${idx}-end`}
+                                        type="number"
+                                        min={0}
+                                        max={rows[0].colors.length - 1}
+                                        value={repeater.end}
+                                        onChange={(e) => {
+                                          const newRepeaters = [...repeaters];
+                                          newRepeaters[idx].end = parseInt(e.target.value) || 0;
+                                          setRepeaters(newRepeaters);
+                                        }}
+                                        className="h-8 w-16"
+                                      />
+                                      <Label htmlFor={`repeater-${idx}-count`} className="text-sm font-normal whitespace-nowrap">
+                                        Repetitions:
+                                      </Label>
+                                      <Input
+                                        id={`repeater-${idx}-count`}
+                                        type="number"
+                                        min={1}
+                                        value={repeater.count}
+                                        onChange={(e) => {
+                                          const newRepeaters = [...repeaters];
+                                          newRepeaters[idx].count = parseInt(e.target.value) || 1;
+                                          setRepeaters(newRepeaters);
+                                        }}
+                                        className="h-8 w-16"
+                                      />
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => {
+                                          const newRepeaters = repeaters.filter((_, i) => i !== idx);
+                                          setRepeaters(newRepeaters);
+                                        }}
+                                        className="ml-auto"
+                                      >
+                                        <Cross2Icon className="h-4 w-4" />
+                                      </Button>
+                                    </div>
+                                    {!isValid && (
+                                      <p className="text-xs text-red-600 pb-2">
+                                        {repeater.start >= repeater.end
+                                          ? 'Start must be less than end'
+                                          : `Range must be even (currently ${repeater.end - repeater.start})`}
+                                      </p>
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
+                          <Button
+                            variant="outline"
+                            onClick={() => {
+                              setRepeaters([
+                                ...repeaters,
+                                { start: 0, end: 2, count: 2 }
+                              ]);
+                            }}
+                          >
+                            <PlusIcon className="mr-2 h-4 w-4" /> Add repeater
+                          </Button>
                         </div>
                       </div>
                     </TabsContent>
@@ -382,7 +697,58 @@ function App() {
                       <ColorSettings
                         colors={colors}
                         handleToggleColor={toggleColorOwned}
+                        handleToggleAll={toggleAllColors}
+                        handleAddColor={addColorToLibrary}
+                        handleDeleteColor={deleteColor}
                       />
+                    </TabsContent>
+                    <TabsContent value="settings">
+                      <div>
+                        <div className="mt-4 mb-8">
+                          <h2 className="scroll-m-20 pb-2 text-3xl font-semibold tracking-tight first:mt-0">
+                            Settings
+                          </h2>
+                        </div>
+
+                        <div className="mb-8">
+                          <h4 className="scroll-m-20 text-xl font-semibold tracking-tight mb-4">
+                            Pattern Information
+                          </h4>
+                          <div className="grid gap-3">
+                            <Label htmlFor="pattern-title">Title</Label>
+                            <Input
+                              type="text"
+                              id="pattern-title"
+                              className="w-[480px]"
+                              placeholder="Enter pattern title"
+                              value={patternTitle}
+                              onChange={(e) => setPatternTitle(e.target.value)}
+                            />
+                            {/* TODO: Add description field in the future */}
+                          </div>
+                        </div>
+
+                        <div className="mb-8">
+                          <h4 className="scroll-m-20 text-xl font-semibold tracking-tight mb-4">
+                            Display Options
+                          </h4>
+                          <div className="flex items-start gap-3">
+                            <Checkbox
+                              id="show-shadows"
+                              checked={useShadow}
+                              onClick={() => setUseShadow(!useShadow)}
+                            />
+                            <div className="grid gap-2">
+                              <Label htmlFor="show-shadows">
+                                Show shadows
+                              </Label>
+                              <p className="text-muted-foreground text-sm">
+                                Simulate a 3D effect in the band preview
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
                     </TabsContent>
                   </Tabs>
                 </div>
@@ -391,21 +757,37 @@ function App() {
           </ResizablePanel>
           <ResizableHandle withHandle />
           <ResizablePanel defaultSize={25} minSize={8} maxSize={50}>
-            <div
-              className="flex h-full justify-center items-center px-8 bg-gray-50"
-              // style={{ maxHeight: "100%" }}
-            >
-              <Pattern
-                bandConfig={rows}
-                repeaterGroups={groupNonOverlappingRepeaters(repeaters)}
-                useMirror={useMirror}
-                useShadow={useShadow}
-                nRows={15}
-              />
+            <div className="flex h-full justify-center px-8 bg-gray-50 overflow-hidden">
+              <div className="w-full h-full overflow-hidden">
+                <Pattern
+                  bandConfig={rows}
+                  repeaterGroups={groupNonOverlappingRepeaters(validRepeaters)}
+                  useMirror={useMirror}
+                  useShadow={useShadow}
+                  nRows={50}
+                />
+              </div>
             </div>
           </ResizablePanel>
         </ResizablePanelGroup>
       </div>
+
+      <AlertDialog open={clearDialogOpen} onOpenChange={setClearDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Clear Pattern?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will reset your pattern to a blank design. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmClearPattern} className="bg-red-600 hover:bg-red-700">
+              Clear Pattern
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

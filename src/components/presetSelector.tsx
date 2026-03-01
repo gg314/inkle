@@ -5,17 +5,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Fragment, useCallback, useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { Color, PatternRow, PresetPattern } from "@/types/inkle";
-import {
-  DoubleArrowUpIcon,
-  MinusIcon,
-  PlusIcon,
-  RocketIcon,
-  ShuffleIcon,
-} from "@radix-ui/react-icons";
+import { PresetPattern } from "@/types/inkle";
 import { presetPatterns } from "@/assets/presets/presets";
 
 type PresetSelectorProps = {
@@ -23,16 +13,11 @@ type PresetSelectorProps = {
 };
 
 const PresetSelector = ({ setPresetFn }: PresetSelectorProps) => {
-  const [selectedPreset, setSelectedPreset] = useState<PresetPattern>(
-    presetPatterns[0]
-  );
-
   const handlePresetChange = (presetName: string) => {
     const selected = presetPatterns.find(
       (preset) => preset.name === presetName
     );
     if (selected) {
-      setSelectedPreset(selected);
       setPresetFn(selected);
     }
   };

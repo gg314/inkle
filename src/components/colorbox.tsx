@@ -1,6 +1,5 @@
 // ColorBox.tsx
-import { Fragment, useState } from "react";
-import { Button } from "@/components/ui/button";
+import { useState } from "react";
 import {
   Popover,
   PopoverContent,
@@ -53,11 +52,11 @@ const ColorBox = ({
   return (
     <TooltipProvider>
       <Tooltip>
-        <TooltipTrigger className="p-0 h-8 border-0">
+        <TooltipTrigger className="p-0 h-8 border-0 flex-shrink-0">
           <Popover open={pickerOpen} onOpenChange={setPickerOpen}>
             <PopoverTrigger asChild>
               <div
-                className="rounded-none border border-gray-700 w-8 h-8 p-0"
+                className="rounded-none border border-gray-700 w-8 h-8 p-0 flex-shrink-0"
                 role="combobox"
                 style={
                   typeof color === "string"
