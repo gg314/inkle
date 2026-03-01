@@ -617,10 +617,7 @@ function App() {
         </div>
         <Separator />
 
-        <ResizablePanelGroup
-          direction="horizontal"
-          className="flex-1 rounded-lg md:min-w-[450px]"
-        >
+        <ResizablePanelGroup className="flex-1 rounded-lg md:min-w-[450px]">
           <ResizablePanel defaultSize={75}>
             <div className="p-10 overflow-y-auto h-full">
               <div>
