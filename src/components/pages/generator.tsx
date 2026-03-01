@@ -25,12 +25,14 @@ type RandomGeneratorProps = {
   colors: Color[];
   setDataFn: React.Dispatch<React.SetStateAction<PatternRow[]>>;
   setRepeatersFn: React.Dispatch<React.SetStateAction<Repeater[]>>;
+  saveSnapshot: () => void;
 };
 
 const RandomGenerator = ({
   colors,
   setDataFn,
   setRepeatersFn,
+  saveSnapshot,
 }: RandomGeneratorProps) => {
   const [numberOfColors, setNumberOfColors] = useState<number>(5);
   const [colorPalette, setColorPalette] = useState<string>("available");
@@ -73,6 +75,7 @@ const RandomGenerator = ({
 
   const generateData = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    saveSnapshot();
     const startingPalette =
       colorPalette === "all" ? colors : colors.filter((c) => c.owned);
     const palette =
@@ -149,7 +152,7 @@ const RandomGenerator = ({
                       }
                     })()}
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent position="popper">
                     <SelectItem value="all">
                       <div>All colors</div>
                       <span className="text-muted-foreground">
@@ -178,6 +181,7 @@ const RandomGenerator = ({
                 <Input
                   type="number"
                   id="number-of-colors"
+                  className="w-20"
                   placeholder="Number of colors"
                   value={numberOfColors}
                   onChange={(e) => {
@@ -240,7 +244,7 @@ const RandomGenerator = ({
               <Input
                 type="number"
                 id="number-of-inner"
-                className="w-[240px]"
+                className="w-20"
                 placeholder="Number of warp threads"
                 value={numberOfWarpThreads}
                 onChange={(e) => {

@@ -81,12 +81,14 @@ import {
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useHistory } from "@/hooks/useHistory";
 import {
   groupNonOverlappingRepeaters,
   mirrorData,
@@ -127,6 +129,12 @@ function App() {
   const [repeaters, setRepeaters] = useState<Repeater[]>(
     presetPatterns[presetPatterns.length - 1].repeaters,
   );
+  const { saveSnapshot, undo, redo, canUndo, canRedo } = useHistory(
+    rows,
+    repeaters,
+    setRows,
+    setRepeaters,
+  );
   // Update document title when pattern title changes
   useEffect(() => {
     if (patternTitle.trim()) {
@@ -136,26 +144,44 @@ function App() {
     }
   }, [patternTitle]);
 
+  // Keyboard shortcuts for undo/redo
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "z" && !e.shiftKey) {
+        e.preventDefault();
+        undo();
+      } else if ((e.ctrlKey || e.metaKey) && e.key === "z" && e.shiftKey) {
+        e.preventDefault();
+        redo();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [undo, redo]);
+
   // add nulls to the end of each pattern row
   const addColor = useCallback(() => {
+    saveSnapshot();
     setRows((oldRows) =>
       oldRows.map((row) => {
         return { ...row, colors: [...row.colors, null] };
       }),
     );
-  }, []);
+  }, [saveSnapshot]);
 
   // remove 1 from the end of each pattern row
   const removeColor = useCallback(() => {
+    saveSnapshot();
     setRows((oldRows) =>
       oldRows.map((row) => {
         return { ...row, colors: row.colors.slice(0, -1) };
       }),
     );
-  }, []);
+  }, [saveSnapshot]);
 
   const updateColor = useCallback(
     (rowIndex: number, colorIndex: number, color: Color | null) => {
+      saveSnapshot();
       setRows((oldRows) =>
         oldRows.map((row, i) =>
           i === rowIndex
@@ -169,10 +195,11 @@ function App() {
         ),
       );
     },
-    [],
+    [saveSnapshot],
   );
 
   const addMirroredData = () => {
+    saveSnapshot();
     setRows(mirrorData(rows));
     setUseMirror(false);
   };
@@ -234,16 +261,19 @@ function App() {
     }));
 
     setColors(updatedColors);
+    saveSnapshot();
     setRows(updatedRows);
   };
 
   const setPreset = (preset: PresetPattern) => {
+    saveSnapshot();
     setRows(preset.band);
     setRepeaters(preset.repeaters);
     toast.success(`Loaded preset "${preset.name}"`);
   };
 
   const confirmClearPattern = () => {
+    saveSnapshot();
     setRows([
       {
         label: "H",
@@ -300,6 +330,7 @@ function App() {
         }
 
         // Restore all settings
+        saveSnapshot();
         if (patternData.title) setPatternTitle(patternData.title);
         if (patternData.colors) setColors(patternData.colors);
         if (patternData.band) setRows(patternData.band);
@@ -519,10 +550,17 @@ function App() {
 
       {/* Desktop view */}
       <div className="hidden h-screen flex-col md:flex">
-        <div className="flex flex-col items-start justify-between space-y-2 py-4 sm:flex-row sm:items-center sm:space-y-0 md:h-16 px-4">
-          <h2 className="text-lg whitespace-nowrap font-light font-display">
-            Inkle Pattern Designer
-          </h2>
+        <div className="flex flex-col items-start justify-between space-y-2 py-[11px] sm:flex-row sm:items-center sm:space-y-0 md:h-14 px-4">
+          <div className="flex items-center gap-2">
+            <img
+              src="/logo.png"
+              alt="Inkle logo"
+              className="w-[40px] select-none pointer-events-none"
+            />
+            <h2 className="text-lg whitespace-nowrap font-light font-display">
+              Inkle Pattern Designer
+            </h2>
+          </div>
           <div className="ml-auto flex w-full space-x-2 sm:justify-end">
             <input
               type="file"
@@ -675,72 +713,42 @@ function App() {
                           </h4>
 
                           <div className="flex items-center gap-2 mb-4">
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button
-                                    variant={
-                                      activeTool === "paint"
-                                        ? "default"
-                                        : "outline"
-                                    }
-                                    size="icon"
-                                    onClick={() => setActiveTool("paint")}
-                                  >
-                                    <Paintbrush className="h-4 w-4" />
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>Paint</TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button
-                                    variant={
-                                      activeTool === "erase"
-                                        ? "default"
-                                        : "outline"
-                                    }
-                                    size="icon"
-                                    onClick={() =>
-                                      setActiveTool(
-                                        activeTool === "erase"
-                                          ? "paint"
-                                          : "erase",
-                                      )
-                                    }
-                                  >
-                                    <Eraser className="h-4 w-4" />
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>Eraser</TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button
-                                    variant={
-                                      activeTool === "eyedropper"
-                                        ? "default"
-                                        : "outline"
-                                    }
-                                    size="icon"
-                                    onClick={() =>
-                                      setActiveTool(
-                                        activeTool === "eyedropper"
-                                          ? "paint"
-                                          : "eyedropper",
-                                      )
-                                    }
-                                  >
-                                    <Pipette className="h-4 w-4" />
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>Eyedropper</TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
+                            <ToggleGroup
+                              type="single"
+                              variant="outline"
+                              value={activeTool}
+                              onValueChange={(val) => {
+                                if (val)
+                                  setActiveTool(
+                                    val as "paint" | "erase" | "eyedropper",
+                                  );
+                              }}
+                            >
+                              <ToggleGroupItem
+                                value="paint"
+                                className="relative"
+                                title="Paint"
+                              >
+                                <Paintbrush className="relative z-10 h-4 w-4" />
+                                <span
+                                  className="absolute bottom-[7px] center-[2px] h-2 w-2 z-0"
+                                  style={{
+                                    backgroundColor: selectedColor.hex,
+                                    clipPath:
+                                      "polygon(100% 0%, 0% 0%, 50% 60%)",
+                                  }}
+                                />
+                              </ToggleGroupItem>
+                              <ToggleGroupItem value="erase" title="Eraser">
+                                <Eraser className="h-4 w-4" />
+                              </ToggleGroupItem>
+                              <ToggleGroupItem
+                                value="eyedropper"
+                                title="Eyedropper"
+                              >
+                                <Pipette className="h-4 w-4" />
+                              </ToggleGroupItem>
+                            </ToggleGroup>
                             <Popover
                               open={paintPickerOpen}
                               onOpenChange={setPaintPickerOpen}
@@ -794,38 +802,42 @@ function App() {
                               </PopoverContent>
                             </Popover>
                             <Separator orientation="vertical" className="h-6" />
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <span>
-                                    <Button
-                                      variant="ghost"
-                                      size="icon"
-                                      disabled
+                            <ToggleGroup
+                              type="single"
+                              variant="outline"
+                              value=""
+                            >
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <ToggleGroupItem
+                                      value="undo"
+                                      disabled={!canUndo}
+                                      onClick={undo}
                                     >
                                       <Undo2 className="h-4 w-4" />
-                                    </Button>
-                                  </span>
-                                </TooltipTrigger>
-                                <TooltipContent>Coming soon</TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <span>
-                                    <Button
-                                      variant="ghost"
-                                      size="icon"
-                                      disabled
+                                    </ToggleGroupItem>
+                                  </TooltipTrigger>
+                                  <TooltipContent>Undo (Ctrl+Z)</TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <ToggleGroupItem
+                                      value="redo"
+                                      disabled={!canRedo}
+                                      onClick={redo}
                                     >
                                       <Redo2 className="h-4 w-4" />
-                                    </Button>
-                                  </span>
-                                </TooltipTrigger>
-                                <TooltipContent>Coming soon</TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
+                                    </ToggleGroupItem>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    Redo (Ctrl+Shift+Z)
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            </ToggleGroup>
                             <Dialog>
                               <DialogTrigger asChild>
                                 <Button
@@ -857,7 +869,8 @@ function App() {
                                       <strong>Eyedropper</strong> picks a color
                                       from an existing cell. Choose a color from
                                       the dropdown, then click cells in the
-                                      grid.
+                                      grid. Use <strong>Ctrl+Z</strong> to undo
+                                      and <strong>Ctrl+Shift+Z</strong> to redo.
                                     </p>
                                   </div>
                                   <div>
@@ -1095,6 +1108,7 @@ function App() {
                                               variant="ghost"
                                               size="sm"
                                               onClick={() => {
+                                                saveSnapshot();
                                                 const newRepeaters =
                                                   repeaters.filter(
                                                     (_, i) => i !== idx,
@@ -1124,6 +1138,7 @@ function App() {
                                         max={rows[0].colors.length - 1}
                                         value={repeater.start}
                                         onChange={(e) => {
+                                          saveSnapshot();
                                           const newRepeaters = [...repeaters];
                                           newRepeaters[idx].start =
                                             parseInt(e.target.value) || 0;
@@ -1144,6 +1159,7 @@ function App() {
                                         max={rows[0].colors.length - 1}
                                         value={repeater.end}
                                         onChange={(e) => {
+                                          saveSnapshot();
                                           const newRepeaters = [...repeaters];
                                           newRepeaters[idx].end =
                                             parseInt(e.target.value) || 0;
@@ -1163,6 +1179,7 @@ function App() {
                                         min={1}
                                         value={repeater.count}
                                         onChange={(e) => {
+                                          saveSnapshot();
                                           const newRepeaters = [...repeaters];
                                           newRepeaters[idx].count =
                                             parseInt(e.target.value) || 1;
@@ -1186,6 +1203,7 @@ function App() {
                           <Button
                             variant="outline"
                             onClick={() => {
+                              saveSnapshot();
                               setRepeaters([
                                 ...repeaters,
                                 { start: 0, end: 2, count: 2 },
@@ -1202,6 +1220,7 @@ function App() {
                         colors={colors}
                         setDataFn={setRows}
                         setRepeatersFn={setRepeaters}
+                        saveSnapshot={saveSnapshot}
                       />
                     </TabsContent>
                     <TabsContent value="colors">
