@@ -1,5 +1,3 @@
-// ColorBox.tsx
-
 import {
   MinusIcon,
   PlusIcon,

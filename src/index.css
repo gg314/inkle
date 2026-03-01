@@ -5,7 +5,7 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme {
-  --font-family-sans: "Geist", Inter, system-ui, sans-serif;
+  --font-family-sans: "Plus Jakarta Sans", Inter, system-ui, sans-serif;
   --font-family-display: "DM Serif Display", Georgia, serif;
 
   --radius-lg: var(--radius);

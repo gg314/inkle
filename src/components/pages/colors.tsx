@@ -1,5 +1,3 @@
-// ColorBox.tsx
-
 import { PlusIcon, SwitchIcon, TrashIcon } from "@radix-ui/react-icons";
 import { useState } from "react";
 import {

@@ -18,10 +18,12 @@ import {
   MinusIcon,
   Pencil2Icon,
   PlusIcon,
+  QuestionMarkCircledIcon,
   ResetIcon,
   UploadIcon,
 } from "@radix-ui/react-icons";
-import ColorBox from "@/components/colorbox";
+import { Eraser, Paintbrush, Pipette, Redo2, Undo2 } from "lucide-react";
+import { Toaster, toast } from "sonner";
 import ColorSettings from "@/components/pages/colors";
 import RandomGenerator from "@/components/pages/generator";
 import Pattern from "@/components/pattern";
@@ -38,6 +40,22 @@ import {
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -51,6 +69,11 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
   ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup,
@@ -58,6 +81,12 @@ import {
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import {
   groupNonOverlappingRepeaters,
   mirrorData,
@@ -83,49 +112,21 @@ function App() {
   const [patternTitle, setPatternTitle] = useState("");
   const [colors, setColors] = useState<Color[]>(ALL_COLORS);
   const [clearDialogOpen, setClearDialogOpen] = useState(false);
+  const [selectedColor, setSelectedColor] = useState<Color>(
+    ALL_COLORS.find((c) => c.owned && c.name === "Black") ??
+      ALL_COLORS.find((c) => c.owned) ??
+      ALL_COLORS[0],
+  );
+  const [activeTool, setActiveTool] = useState<
+    "paint" | "erase" | "eyedropper"
+  >("paint");
+  const [paintPickerOpen, setPaintPickerOpen] = useState(false);
   const [rows, setRows] = useState<PatternRow[]>(
     presetPatterns[presetPatterns.length - 1].band,
   );
   const [repeaters, setRepeaters] = useState<Repeater[]>(
     presetPatterns[presetPatterns.length - 1].repeaters,
   );
-  // const [rows, setRows] = useState<PatternRow[]>([
-  //   {
-  //     label: "H",
-  //     colors: [
-  //       colors[20],
-  //       null,
-  //       colors[20],
-  //       null,
-  //       colors[30],
-  //       null,
-  //       colors[30],
-  //       null,
-  //       colors[20],
-  //     ],
-  //   },
-  //   {
-  //     label: "U",
-  //     colors: [
-  //       null,
-  //       colors[30],
-  //       null,
-  //       colors[30],
-  //       null,
-  //       colors[20],
-  //       null,
-  //       colors[30],
-  //       null,
-  //     ],
-  //   },
-  // ]);
-  // const [repeaters, setRepeaters] = useState<Repeater[]>([
-  //   { count: 2, start: 1, end: 3 },
-  //   { count: 3, start: 1, end: 7 },
-  //   { count: 2, start: 5, end: 7 },
-  //   { count: 3, start: 7, end: 9 },
-  // ]);
-
   // Update document title when pattern title changes
   useEffect(() => {
     if (patternTitle.trim()) {
@@ -154,12 +155,19 @@ function App() {
   }, []);
 
   const updateColor = useCallback(
-    (rowIndex: number, colorIndex: number, color: Color) => {
-      setRows((oldRows) => {
-        const updatedRows = [...oldRows];
-        updatedRows[rowIndex].colors[colorIndex] = color;
-        return updatedRows;
-      });
+    (rowIndex: number, colorIndex: number, color: Color | null) => {
+      setRows((oldRows) =>
+        oldRows.map((row, i) =>
+          i === rowIndex
+            ? {
+                ...row,
+                colors: row.colors.map((c, j) =>
+                  j === colorIndex ? color : c,
+                ),
+              }
+            : row,
+        ),
+      );
     },
     [],
   );
@@ -232,6 +240,7 @@ function App() {
   const setPreset = (preset: PresetPattern) => {
     setRows(preset.band);
     setRepeaters(preset.repeaters);
+    toast.success(`Loaded preset "${preset.name}"`);
   };
 
   const confirmClearPattern = () => {
@@ -286,7 +295,7 @@ function App() {
 
         // Validate the data structure
         if (!patternData.version || !patternData.band) {
-          alert("Invalid pattern file format");
+          toast.error("Invalid pattern file format");
           return;
         }
 
@@ -299,8 +308,9 @@ function App() {
           setUseMirror(patternData.useMirror);
         if (patternData.useShadow !== undefined)
           setUseShadow(patternData.useShadow);
+        toast.success(`Loaded "${patternData.title || file.name}"`);
       } catch (error) {
-        alert("Error loading pattern file: " + (error as Error).message);
+        toast.error("Error loading pattern: " + (error as Error).message);
       }
     };
     reader.readAsText(file);
@@ -664,6 +674,240 @@ function App() {
                             Warping draft
                           </h4>
 
+                          <div className="flex items-center gap-2 mb-4">
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant={
+                                      activeTool === "paint"
+                                        ? "default"
+                                        : "outline"
+                                    }
+                                    size="icon"
+                                    onClick={() => setActiveTool("paint")}
+                                  >
+                                    <Paintbrush className="h-4 w-4" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Paint</TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant={
+                                      activeTool === "erase"
+                                        ? "default"
+                                        : "outline"
+                                    }
+                                    size="icon"
+                                    onClick={() =>
+                                      setActiveTool(
+                                        activeTool === "erase"
+                                          ? "paint"
+                                          : "erase",
+                                      )
+                                    }
+                                  >
+                                    <Eraser className="h-4 w-4" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Eraser</TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant={
+                                      activeTool === "eyedropper"
+                                        ? "default"
+                                        : "outline"
+                                    }
+                                    size="icon"
+                                    onClick={() =>
+                                      setActiveTool(
+                                        activeTool === "eyedropper"
+                                          ? "paint"
+                                          : "eyedropper",
+                                      )
+                                    }
+                                  >
+                                    <Pipette className="h-4 w-4" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Eyedropper</TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                            <Popover
+                              open={paintPickerOpen}
+                              onOpenChange={setPaintPickerOpen}
+                            >
+                              <PopoverTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  className={`gap-2 ${activeTool !== "paint" ? "opacity-50" : ""}`}
+                                >
+                                  <div
+                                    className="h-4 w-4 rounded-sm border border-gray-400 flex-shrink-0"
+                                    style={{
+                                      backgroundColor: selectedColor.hex,
+                                    }}
+                                  />
+                                  {selectedColor.name}
+                                </Button>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-[200px] p-0">
+                                <Command>
+                                  <CommandInput placeholder="Search colors..." />
+                                  <CommandList>
+                                    <CommandEmpty>No results</CommandEmpty>
+                                    <CommandGroup>
+                                      {colors.map((c, idx) => {
+                                        if (c.owned) {
+                                          return (
+                                            <CommandItem
+                                              key={idx}
+                                              value={c.name}
+                                              onSelect={() => {
+                                                setSelectedColor(c);
+                                                setActiveTool("paint");
+                                                setPaintPickerOpen(false);
+                                              }}
+                                            >
+                                              <div
+                                                className="h-4 w-4 rounded-sm border border-gray-300"
+                                                style={{
+                                                  backgroundColor: c.hex,
+                                                }}
+                                              />
+                                              <span>{c.name}</span>
+                                            </CommandItem>
+                                          );
+                                        }
+                                      })}
+                                    </CommandGroup>
+                                  </CommandList>
+                                </Command>
+                              </PopoverContent>
+                            </Popover>
+                            <Separator orientation="vertical" className="h-6" />
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <span>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      disabled
+                                    >
+                                      <Undo2 className="h-4 w-4" />
+                                    </Button>
+                                  </span>
+                                </TooltipTrigger>
+                                <TooltipContent>Coming soon</TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <span>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      disabled
+                                    >
+                                      <Redo2 className="h-4 w-4" />
+                                    </Button>
+                                  </span>
+                                </TooltipTrigger>
+                                <TooltipContent>Coming soon</TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                            <Dialog>
+                              <DialogTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="text-muted-foreground"
+                                >
+                                  <QuestionMarkCircledIcon className="h-4 w-4" />
+                                </Button>
+                              </DialogTrigger>
+                              <DialogContent className="sm:max-w-[480px]">
+                                <DialogHeader>
+                                  <DialogTitle>
+                                    How to use the designer
+                                  </DialogTitle>
+                                  <DialogDescription>
+                                    A quick guide to designing inkle loom
+                                    patterns.
+                                  </DialogDescription>
+                                </DialogHeader>
+                                <div className="grid gap-4 py-2 text-sm">
+                                  <div>
+                                    <p className="font-medium mb-1">Toolbar</p>
+                                    <p className="text-muted-foreground">
+                                      The toolbar has three tools.{" "}
+                                      <strong>Paint</strong> fills cells with
+                                      the selected color.{" "}
+                                      <strong>Eraser</strong> clears cells.{" "}
+                                      <strong>Eyedropper</strong> picks a color
+                                      from an existing cell. Choose a color from
+                                      the dropdown, then click cells in the
+                                      grid.
+                                    </p>
+                                  </div>
+                                  <div>
+                                    <p className="font-medium mb-1">Warps</p>
+                                    <p className="text-muted-foreground">
+                                      Use <strong>Add warp</strong> and{" "}
+                                      <strong>Remove warp</strong> below the
+                                      draft to change the width of your band.
+                                    </p>
+                                  </div>
+                                  <div>
+                                    <p className="font-medium mb-1">
+                                      Mirroring
+                                    </p>
+                                    <p className="text-muted-foreground">
+                                      Check{" "}
+                                      <strong>
+                                        Mirror pattern horizontally
+                                      </strong>{" "}
+                                      to preview a symmetric design. Use{" "}
+                                      <strong>Expand mirrored pattern</strong>{" "}
+                                      to make it permanent.
+                                    </p>
+                                  </div>
+                                  <div>
+                                    <p className="font-medium mb-1">
+                                      Repeaters
+                                    </p>
+                                    <p className="text-muted-foreground">
+                                      Repeaters duplicate a section of your
+                                      pattern. Set a start and end position,
+                                      then choose how many times to repeat.
+                                    </p>
+                                  </div>
+                                  <div>
+                                    <p className="font-medium mb-1">
+                                      Saving and loading
+                                    </p>
+                                    <p className="text-muted-foreground">
+                                      Use <strong>Manage Project</strong> in the
+                                      top bar to save your design as a file,
+                                      load a saved file, or start from a preset
+                                      template.
+                                    </p>
+                                  </div>
+                                </div>
+                              </DialogContent>
+                            </Dialog>
+                          </div>
+
                           <ScrollArea className="mb-6 w-full whitespace-nowrap border rounded-md">
                             <div className="p-4">
                               {rows.map((row, rowIdx) => (
@@ -671,21 +915,51 @@ function App() {
                                   key={rowIdx}
                                   className="flex items-center h-8 flex-nowrap"
                                 >
-                                  <span className="weight-light p-2 text-muted-foreground w-8 flex-shrink-0">
-                                    {row.label}
-                                  </span>
+                                  <TooltipProvider>
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <span className="weight-light p-2 text-muted-foreground w-8 flex-shrink-0 cursor-default">
+                                          {row.label}
+                                        </span>
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                        {row.label === "H"
+                                          ? "Heddled"
+                                          : "Unheddled"}
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  </TooltipProvider>
                                   {row.colors.map((color, idx) => (
                                     <Fragment key={idx}>
                                       {color === null &&
                                       (rowIdx + idx) % 2 === 1 ? (
                                         BLANK_BUTTON
                                       ) : (
-                                        <ColorBox
-                                          color={color}
-                                          colors={colors}
-                                          rowIdx={rowIdx}
-                                          colIdx={idx}
-                                          updateColorFn={updateColor}
+                                        <div
+                                          className="rounded-none border border-gray-700 w-8 h-8 p-0 flex-shrink-0 cursor-pointer"
+                                          style={
+                                            color?.hex
+                                              ? { backgroundColor: color.hex }
+                                              : {
+                                                  background:
+                                                    "repeating-linear-gradient(-45deg, transparent, transparent 4px, rgba(0,0,0,.08) 4px, rgba(0,0,0,.08) 8px)",
+                                                }
+                                          }
+                                          onClick={() => {
+                                            if (activeTool === "eyedropper") {
+                                              if (color) {
+                                                setSelectedColor(color);
+                                              }
+                                            } else if (activeTool === "erase") {
+                                              updateColor(rowIdx, idx, null);
+                                            } else {
+                                              updateColor(
+                                                rowIdx,
+                                                idx,
+                                                selectedColor,
+                                              );
+                                            }
+                                          }}
                                         />
                                       )}
                                     </Fragment>
@@ -800,7 +1074,7 @@ function App() {
 
                         <div className="mb-4">
                           {repeaters.length === 0 ? (
-                            <p className="text-sm text-muted-foreground mb-4 italic">
+                            <p className="text-sm text-muted-foreground mb-4 italic opacity-70">
                               No repeaters defined yet.
                             </p>
                           ) : (
@@ -814,6 +1088,29 @@ function App() {
                                     className={`${!isLast ? "border-b" : ""} ${!isValid ? "bg-red-50" : ""}`}
                                   >
                                     <div className="flex items-center gap-2 py-3">
+                                      <TooltipProvider>
+                                        <Tooltip>
+                                          <TooltipTrigger asChild>
+                                            <Button
+                                              variant="ghost"
+                                              size="sm"
+                                              onClick={() => {
+                                                const newRepeaters =
+                                                  repeaters.filter(
+                                                    (_, i) => i !== idx,
+                                                  );
+                                                setRepeaters(newRepeaters);
+                                              }}
+                                              className="text-muted-foreground hover:text-red-600"
+                                            >
+                                              <Cross2Icon className="h-4 w-4" />
+                                            </Button>
+                                          </TooltipTrigger>
+                                          <TooltipContent>
+                                            Delete repeater
+                                          </TooltipContent>
+                                        </Tooltip>
+                                      </TooltipProvider>
                                       <Label
                                         htmlFor={`repeater-${idx}-start`}
                                         className="text-sm font-normal whitespace-nowrap"
@@ -873,19 +1170,6 @@ function App() {
                                         }}
                                         className="h-8 w-16"
                                       />
-                                      <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        onClick={() => {
-                                          const newRepeaters = repeaters.filter(
-                                            (_, i) => i !== idx,
-                                          );
-                                          setRepeaters(newRepeaters);
-                                        }}
-                                        className="ml-auto"
-                                      >
-                                        <Cross2Icon className="h-4 w-4" />
-                                      </Button>
                                     </div>
                                     {!isValid && (
                                       <p className="text-xs text-red-600 pb-2">
@@ -1014,6 +1298,7 @@ function App() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      <Toaster position="bottom-right" />
     </>
   );
 }

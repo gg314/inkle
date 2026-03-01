@@ -1,4 +1,4 @@
-import React, { Fragment, useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { mirrorData, repeat } from "@/lib/inkle";
 import { PatternRow, Repeater } from "@/types/inkle";
 
@@ -66,7 +66,7 @@ const Pattern: React.FC<PatternProps> = ({
   const visibleHeight = containerSize.height * scale;
 
   // Enough tile repeats to fill the visible height, plus a buffer
-  const repeatCount = Math.ceil(visibleHeight / tileHeight) + 2;
+  const repeatCount = Math.min(Math.ceil(visibleHeight / tileHeight) + 2, 150);
 
   const vbX = -2 * W;
   const vbY = (-2 + 2.5) * H;
@@ -91,37 +91,14 @@ const Pattern: React.FC<PatternProps> = ({
         const pointsStr = points.map(([x, y]) => `${x},${y}`).join(" ");
 
         return (
-          <Fragment key={`${rowIdx}-${colIdx}`}>
-            <polygon
-              points={pointsStr}
-              fill={color.hex}
-              stroke={useShadow ? "rgba(0, 0, 0, 0.02)" : undefined}
-              strokeWidth={18}
-            />
-
-            {useShadow ? (
-              <>
-                <polygon
-                  points={pointsStr}
-                  fill={"transparent"}
-                  stroke="rgba(0, 0, 0, 0.03)"
-                  strokeWidth={14}
-                />
-                <polygon
-                  points={pointsStr}
-                  fill={"transparent"}
-                  stroke="rgba(0, 0, 0, 0.03)"
-                  strokeWidth={8}
-                />
-                <polygon
-                  points={pointsStr}
-                  fill={"transparent"}
-                  stroke="rgba(0, 0, 0, 0.01)"
-                  strokeWidth={3}
-                />
-              </>
-            ) : null}
-          </Fragment>
+          <polygon
+            key={`${rowIdx}-${colIdx}`}
+            points={pointsStr}
+            fill={color.hex}
+            stroke={useShadow ? "rgba(0, 0, 0, 0.1)" : undefined}
+            strokeWidth={useShadow ? 12 : undefined}
+            paintOrder={useShadow ? "stroke fill" : undefined}
+          />
         );
       }),
     );

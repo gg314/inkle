@@ -181,7 +181,7 @@ function hexToHSL(hex: string): { h: number; s: number; l: number } {
 }
 
 export function sortColors(colors: Color[]): Color[] {
-  return colors.sort((a, b) => {
+  return [...colors].sort((a, b) => {
     const hslA = hexToHSL(a.hex);
     const hslB = hexToHSL(b.hex);
 
