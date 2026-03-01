@@ -1,3 +1,4 @@
+import { presetPatterns } from "@/assets/presets/presets";
 import {
   Select,
   SelectContent,
@@ -6,7 +7,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { PresetPattern } from "@/types/inkle";
-import { presetPatterns } from "@/assets/presets/presets";
 
 type PresetSelectorProps = {
   setPresetFn: (preset: PresetPattern) => void;
@@ -15,7 +15,7 @@ type PresetSelectorProps = {
 const PresetSelector = ({ setPresetFn }: PresetSelectorProps) => {
   const handlePresetChange = (presetName: string) => {
     const selected = presetPatterns.find(
-      (preset) => preset.name === presetName
+      (preset) => preset.name === presetName,
     );
     if (selected) {
       setPresetFn(selected);

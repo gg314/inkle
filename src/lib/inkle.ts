@@ -10,7 +10,7 @@ export const mirrorData = (bandConfig: PatternRow[]) => {
 
 function expandRepeaterIndices(
   repeater: Repeater,
-  previousRepeaters: Repeater[]
+  previousRepeaters: Repeater[],
 ): Repeater {
   let totalShiftStart = 0;
   let totalShiftStop = 0;
@@ -43,7 +43,7 @@ function expandRepeaterGroups(repeaterGroups: Repeater[][]): Repeater[][] {
   for (const currentGroup of repeaterGroups) {
     // Adjust the current group's repeaters based on previous repeaters
     const adjustedGroup = currentGroup.map((repeater) =>
-      expandRepeaterIndices(repeater, previousRepeaters)
+      expandRepeaterIndices(repeater, previousRepeaters),
     );
 
     // Add the adjusted group to the result
@@ -57,7 +57,7 @@ function expandRepeaterGroups(repeaterGroups: Repeater[][]): Repeater[][] {
 }
 export function expandData(
   rows: PatternRow[],
-  repeaterGroups: Repeater[][]
+  repeaterGroups: Repeater[][],
 ): PatternRow[] {
   // Adjust the repeater groups
   const adjustedRepeaterGroups = expandRepeaterGroups(repeaterGroups);
@@ -100,7 +100,7 @@ export function expandData(
 
 export function repeat<T>(
   colors: T[],
-  repeaterGroups: { count: number; start: number; end: number }[][]
+  repeaterGroups: { count: number; start: number; end: number }[][],
 ): T[] {
   let currentColors: T[] = [...colors];
   let indices: number[] = [];
@@ -114,21 +114,24 @@ export function repeat<T>(
     let indicesToSkip: number = 0;
     for (const repeater of repeaterGroup) {
       newColors.push(
-        ...currentColors.slice(indices[lastEnd], indices[repeater.start])
+        ...currentColors.slice(indices[lastEnd], indices[repeater.start]),
       );
       for (let i = lastEnd; i < repeater.end; i++) {
         newIndices.push(indicesToSkip + i);
       }
       for (let c = 0; c < repeater.count; c++) {
         newColors.push(
-          ...currentColors.slice(indices[repeater.start], indices[repeater.end])
+          ...currentColors.slice(
+            indices[repeater.start],
+            indices[repeater.end],
+          ),
         );
       }
       indicesToSkip += (repeater.count - 1) * (repeater.end - repeater.start);
       lastEnd = repeater.end;
     }
     newColors.push(
-      ...currentColors.slice(indices[lastEnd], currentColors.length)
+      ...currentColors.slice(indices[lastEnd], currentColors.length),
     );
     for (let i = lastEnd; i < indices.length; i++) {
       newIndices.push(indicesToSkip + i);
@@ -212,7 +215,7 @@ export function repeaterLength(repeater: Repeater): number {
  * @returns - An array of lists of non-overlapping Repeater objects
  */
 export function groupNonOverlappingRepeaters(
-  repeaters: Repeater[]
+  repeaters: Repeater[],
 ): Repeater[][] {
   // Sort the repeaters by length (end - start) and then by start
   const sortedRepeaters = [...repeaters].sort((a, b) => {

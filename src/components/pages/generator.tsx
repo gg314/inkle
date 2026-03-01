@@ -1,18 +1,17 @@
 // ColorBox.tsx
-import { useCallback, useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import ColorBox from "@/components/colorbox";
-import { Color, PatternRow, Repeater } from "@/types/inkle";
+
 import {
   MinusIcon,
   PlusIcon,
   RocketIcon,
   ShuffleIcon,
 } from "@radix-ui/react-icons";
-import { Switch } from "@/components/ui/switch";
+import { useCallback, useState } from "react";
+import ColorBox from "@/components/colorbox";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -20,7 +19,9 @@ import {
   SelectTrigger,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+import { Switch } from "@/components/ui/switch";
 import { mirrorData } from "@/lib/inkle";
+import { Color, PatternRow, Repeater } from "@/types/inkle";
 
 type RandomGeneratorProps = {
   colors: Color[];
@@ -59,12 +60,12 @@ const RandomGenerator = ({
         return updated;
       });
     },
-    []
+    [],
   );
 
   function getRandomColor(
     color: Color | "random" | null,
-    palette: Color[] = []
+    palette: Color[] = [],
   ) {
     if (color == "random") {
       return palette[Math.floor(Math.random() * palette.length)];
@@ -153,12 +154,16 @@ const RandomGenerator = ({
                   <SelectContent>
                     <SelectItem value="all">
                       <div>All colors</div>
-                      <span className="text-muted-foreground">{colors.length} colors</span>
+                      <span className="text-muted-foreground">
+                        {colors.length} colors
+                      </span>
                     </SelectItem>
                     <SelectItem value="available">
                       <div>
                         <span>Available colors</span>
-                        <div className="text-muted-foreground">{colors.filter((c) => c.owned).length} colors</div>
+                        <div className="text-muted-foreground">
+                          {colors.filter((c) => c.owned).length} colors
+                        </div>
                       </div>
                     </SelectItem>
                   </SelectContent>

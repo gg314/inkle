@@ -1,6 +1,6 @@
 import React, { Fragment } from "react";
-import { PatternRow, Repeater } from "@/types/inkle";
 import { mirrorData, repeat } from "@/lib/inkle";
+import { PatternRow, Repeater } from "@/types/inkle";
 
 interface PatternProps {
   bandConfig: PatternRow[];
@@ -13,7 +13,7 @@ interface PatternProps {
 const prepareData = (
   bandConfig: PatternRow[],
   repeaterGroups: Repeater[][],
-  useMirror: boolean
+  useMirror: boolean,
 ) => {
   const data = bandConfig.map((b) => {
     return {
@@ -114,8 +114,8 @@ const Pattern: React.FC<PatternProps> = ({
                   ) : null}
                 </Fragment>
               );
-            })
-          )
+            }),
+          ),
         )}{" "}
       </g>
     </svg>

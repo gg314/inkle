@@ -1,18 +1,7 @@
 // ColorBox.tsx
-import { Button } from "@/components/ui/button";
-import { Color } from "@/types/inkle";
+
 import { PlusIcon, SwitchIcon, TrashIcon } from "@radix-ui/react-icons";
-import { sortColors } from "@/lib/inkle";
-import { cn } from "@/lib/utils";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+import { useState } from "react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -24,9 +13,21 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useState } from "react";
+import { sortColors } from "@/lib/inkle";
+import { cn } from "@/lib/utils";
+import { Color } from "@/types/inkle";
 
 type ColorSettingsProps = {
   colors: Color[];
@@ -36,7 +37,13 @@ type ColorSettingsProps = {
   handleDeleteColor: (color: Color) => void;
 };
 
-const ColorSettings = ({ colors, handleToggleColor, handleToggleAll, handleAddColor, handleDeleteColor }: ColorSettingsProps) => {
+const ColorSettings = ({
+  colors,
+  handleToggleColor,
+  handleToggleAll,
+  handleAddColor,
+  handleDeleteColor,
+}: ColorSettingsProps) => {
   const [open, setOpen] = useState(false);
   const [newColorName, setNewColorName] = useState("");
   const [newColorHex, setNewColorHex] = useState("#000000");
@@ -138,7 +145,7 @@ const ColorSettings = ({ colors, handleToggleColor, handleToggleAll, handleAddCo
               key={index}
               className={cn(
                 "flex items-center my-1 group relative",
-                color.owned ? "opacity-100" : "opacity-30"
+                color.owned ? "opacity-100" : "opacity-30",
               )}
             >
               <div
@@ -176,14 +183,20 @@ const ColorSettings = ({ colors, handleToggleColor, handleToggleAll, handleAddCo
             <AlertDialogHeader>
               <AlertDialogTitle>Delete Custom Color</AlertDialogTitle>
               <AlertDialogDescription>
-                Are you sure you want to delete "{colorToDelete?.name}"? This will remove it from your color library and replace it with empty spaces in any patterns where it's used. This action cannot be undone.
+                Are you sure you want to delete "{colorToDelete?.name}"? This
+                will remove it from your color library and replace it with empty
+                spaces in any patterns where it's used. This action cannot be
+                undone.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel onClick={() => setColorToDelete(null)}>
                 Cancel
               </AlertDialogCancel>
-              <AlertDialogAction onClick={confirmDelete} className="bg-red-600 hover:bg-red-700">
+              <AlertDialogAction
+                onClick={confirmDelete}
+                className="bg-red-600 hover:bg-red-700"
+              >
                 Delete
               </AlertDialogAction>
             </AlertDialogFooter>

@@ -1,10 +1,7 @@
 // ColorBox.tsx
+
+import { QuestionMarkIcon } from "@radix-ui/react-icons";
 import { useState } from "react";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import {
   Command,
   CommandEmpty,
@@ -13,14 +10,18 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
-import { Color } from "@/types/inkle";
-import { QuestionMarkIcon } from "@radix-ui/react-icons";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { Color } from "@/types/inkle";
 
 type ColorBoxProps = {
   color: Color | null | "random";
@@ -65,8 +66,8 @@ const ColorBox = ({
                           "repeating-linear-gradient(-45deg, rgba(155, 100, 255, .03), rgba(155, 100, 255, .03) 6px, rgba(155, 100, 255, .2) 6px, rgba(155, 100, 255, .2) 12px)",
                       }
                     : color?.hex
-                    ? { backgroundColor: color.hex }
-                    : undefined
+                      ? { backgroundColor: color.hex }
+                      : undefined
                 }
               >
                 {color === "random" && (
