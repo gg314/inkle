@@ -201,7 +201,7 @@ const RandomGenerator = ({
                   variant={"outline"}
                   onClick={addOuterBand}
                 >
-                  <PlusIcon className="mr-2 h-4 w-4" />
+                  <PlusIcon className="h-4 w-4" />
                   Add outer band
                 </Button>
                 <Button
@@ -210,7 +210,7 @@ const RandomGenerator = ({
                   onClick={removeOuterBand}
                   disabled={outerBands.length <= 0}
                 >
-                  <MinusIcon className="mr-2 h-4 w-4" />
+                  <MinusIcon className="h-4 w-4" />
                   Remove outer band
                 </Button>
               </div>
@@ -270,7 +270,7 @@ const RandomGenerator = ({
           </fieldset>
 
           <Button className="w-fit">
-            <ShuffleIcon className="mr-2 h-4 w-4" />
+            <ShuffleIcon className="h-4 w-4" />
             Generate
           </Button>
         </form>

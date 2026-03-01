@@ -5,13 +5,16 @@ import {
   BookmarkIcon,
   ChevronDownIcon,
   ColorWheelIcon,
+  ColumnsIcon,
   CopyIcon,
   Cross2Icon,
   DownloadIcon,
   EyeOpenIcon,
   FileTextIcon,
+  GearIcon,
   GitHubLogoIcon,
   HeartIcon,
+  MagicWandIcon,
   MinusIcon,
   Pencil2Icon,
   PlusIcon,
@@ -76,6 +79,7 @@ function App() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [useMirror, setUseMirror] = useState(false);
   const [useShadow, setUseShadow] = useState(true);
+
   const [patternTitle, setPatternTitle] = useState("");
   const [colors, setColors] = useState<Color[]>(ALL_COLORS);
   const [clearDialogOpen, setClearDialogOpen] = useState(false);
@@ -481,7 +485,7 @@ function App() {
               target="_blank"
               rel="noopener noreferrer"
             >
-              <GitHubLogoIcon className="mr-2 h-4 w-4" />
+              <GitHubLogoIcon className="h-4 w-4" />
               Source code
             </a>
           </Button>
@@ -496,7 +500,7 @@ function App() {
               target="_blank"
               rel="noopener noreferrer"
             >
-              <HeartIcon className="mr-2 h-4 w-4" />
+              <HeartIcon className="h-4 w-4" />
               Support
             </a>
           </Button>
@@ -521,22 +525,22 @@ function App() {
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost">
                   Manage Project
-                  <ChevronDownIcon className="ml-2 h-4 w-4" />
+                  <ChevronDownIcon className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
                 <DropdownMenuItem onClick={savePattern}>
-                  <DownloadIcon className="mr-2 h-4 w-4" />
+                  <DownloadIcon className="h-4 w-4" />
                   Save Pattern...
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => fileInputRef.current?.click()}>
-                  <UploadIcon className="mr-2 h-4 w-4" />
+                  <UploadIcon className="h-4 w-4" />
                   Load Pattern...
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuSub>
                   <DropdownMenuSubTrigger>
-                    <CopyIcon className="mr-2 h-4 w-4" />
+                    <CopyIcon className="h-4 w-4" />
                     Load Preset
                   </DropdownMenuSubTrigger>
                   <DropdownMenuSubContent className="w-48">
@@ -552,7 +556,7 @@ function App() {
                 </DropdownMenuSub>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => setClearDialogOpen(true)}>
-                  <ResetIcon className="mr-2 h-4 w-4" />
+                  <ResetIcon className="h-4 w-4" />
                   Clear Pattern
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -561,55 +565,59 @@ function App() {
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost">
                   Resources
-                  <ChevronDownIcon className="ml-2 h-4 w-4" />
+                  <ChevronDownIcon className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-64">
-                <DropdownMenuItem asChild>
-                  <a
-                    href="https://github.com/gg314/inkle"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="cursor-pointer"
-                  >
-                    <GitHubLogoIcon className="mr-2 h-4 w-4" />
-                    Source Code
-                  </a>
+                <DropdownMenuItem
+                  onSelect={() =>
+                    window.open(
+                      "https://github.com/gg314/inkle",
+                      "_blank",
+                      "noopener,noreferrer",
+                    )
+                  }
+                >
+                  <GitHubLogoIcon className="h-4 w-4" />
+                  Source Code
                 </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <a
-                    href="https://github.com/sponsors/gg314?frequency=one-time"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="cursor-pointer"
-                  >
-                    <HeartIcon className="mr-2 h-4 w-4" />
-                    Support
-                  </a>
+                <DropdownMenuItem
+                  onSelect={() =>
+                    window.open(
+                      "https://github.com/sponsors/gg314?frequency=one-time",
+                      "_blank",
+                      "noopener,noreferrer",
+                    )
+                  }
+                >
+                  <HeartIcon className="h-4 w-4" />
+                  Support
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuLabel>Downloads</DropdownMenuLabel>
-                <DropdownMenuItem asChild>
-                  <a
-                    href="/inkle-loom-plans.pdf"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="cursor-pointer"
-                  >
-                    <FileTextIcon className="mr-2 h-4 w-4" />
-                    Build an Inkle Loom (PDF)
-                  </a>
+                <DropdownMenuItem
+                  onSelect={() =>
+                    window.open(
+                      "/inkle-loom-plans.pdf",
+                      "_blank",
+                      "noopener,noreferrer",
+                    )
+                  }
+                >
+                  <FileTextIcon className="h-4 w-4" />
+                  Build an Inkle Loom (PDF)
                 </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <a
-                    href="/inkle-loom-pattern-standard.pdf"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="cursor-pointer"
-                  >
-                    <FileTextIcon className="mr-2 h-4 w-4" />
-                    Blank Pattern Template (PDF)
-                  </a>
+                <DropdownMenuItem
+                  onSelect={() =>
+                    window.open(
+                      "/inkle-loom-pattern-standard.pdf",
+                      "_blank",
+                      "noopener,noreferrer",
+                    )
+                  }
+                >
+                  <FileTextIcon className="h-4 w-4" />
+                  Blank Pattern Template (PDF)
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -618,7 +626,7 @@ function App() {
         <Separator />
 
         <ResizablePanelGroup className="flex-1 rounded-lg md:min-w-[450px]">
-          <ResizablePanel defaultSize={75}>
+          <ResizablePanel defaultSize="75%">
             <div className="p-10 overflow-y-auto h-full">
               <div>
                 <div className="flex h-full justify-center">
@@ -626,15 +634,21 @@ function App() {
                     <div>
                       <TabsList className="mb-4">
                         <TabsTrigger value="designer">
+                          <GridIcon className="h-4 w-4" />
                           Band Designer
                         </TabsTrigger>
                         <TabsTrigger value="generator">
+                          <ShuffleIcon className="h-4 w-4" />
                           Random Generator
                         </TabsTrigger>
                         <TabsTrigger value="colors">
+                          <ColorWheelIcon className="h-4 w-4" />
                           Available Colors
                         </TabsTrigger>
-                        <TabsTrigger value="settings">Settings</TabsTrigger>
+                        <TabsTrigger value="settings">
+                          <GearIcon className="h-4 w-4" />
+                          Settings
+                        </TabsTrigger>
                       </TabsList>
                     </div>
                     <TabsContent value="designer">
@@ -733,14 +747,14 @@ function App() {
 
                           <div className="flex items-center space-x-2 mb-4">
                             <Button variant="outline" onClick={addColor}>
-                              <PlusIcon className="mr-2 h-4 w-4" /> Add warp
+                              <PlusIcon className="h-4 w-4" /> Add warp
                             </Button>
                             <Button
                               variant="outline"
                               onClick={removeColor}
                               disabled={rows[0].colors.length <= 1}
                             >
-                              <MinusIcon className="mr-2 h-4 w-4" /> Remove warp
+                              <MinusIcon className="h-4 w-4" /> Remove warp
                             </Button>
                           </div>
                           <div className="flex items-center space-x-2">
@@ -749,7 +763,7 @@ function App() {
                               disabled={!useMirror}
                               onClick={addMirroredData}
                             >
-                              <CopyIcon className="mr-2 h-4 w-4" />
+                              <CopyIcon className="h-4 w-4" />
                               Expand mirrored pattern
                             </Button>
                           </div>
@@ -894,7 +908,7 @@ function App() {
                               ]);
                             }}
                           >
-                            <PlusIcon className="mr-2 h-4 w-4" /> Add repeater
+                            <PlusIcon className="h-4 w-4" /> Add repeater
                           </Button>
                         </div>
                       </div>
@@ -967,17 +981,14 @@ function App() {
             </div>
           </ResizablePanel>
           <ResizableHandle withHandle />
-          <ResizablePanel defaultSize={25} minSize={8} maxSize={50}>
-            <div className="flex h-full justify-center px-8 bg-gray-50 overflow-hidden">
-              <div className="w-full h-full overflow-hidden">
-                <Pattern
-                  bandConfig={rows}
-                  repeaterGroups={groupNonOverlappingRepeaters(validRepeaters)}
-                  useMirror={useMirror}
-                  useShadow={useShadow}
-                  nRows={50}
-                />
-              </div>
+          <ResizablePanel defaultSize="8%" minSize="8%" maxSize="50%">
+            <div className="h-full px-8 bg-gray-50 overflow-hidden">
+              <Pattern
+                bandConfig={rows}
+                repeaterGroups={groupNonOverlappingRepeaters(validRepeaters)}
+                useMirror={useMirror}
+                useShadow={useShadow}
+              />
             </div>
           </ResizablePanel>
         </ResizablePanelGroup>

@@ -81,12 +81,12 @@ const ColorSettings = ({
         </div>
         <div className="mb-8">
           <Button variant="outline" className="mr-2" onClick={handleToggleAll}>
-            <SwitchIcon className="mr-2 h-4 w-4" /> Toggle availability for all
+            <SwitchIcon className="h-4 w-4" /> Toggle availability for all
           </Button>
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
               <Button variant="outline">
-                <PlusIcon className="mr-2 h-4 w-4" /> Add a color
+                <PlusIcon className="h-4 w-4" /> Add a color
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[425px]">

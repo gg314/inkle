@@ -1,4 +1,4 @@
-import React, { Fragment } from "react";
+import React, { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { mirrorData, repeat } from "@/lib/inkle";
 import { PatternRow, Repeater } from "@/types/inkle";
 
@@ -7,8 +7,10 @@ interface PatternProps {
   repeaterGroups: Repeater[][];
   useMirror: boolean;
   useShadow: boolean;
-  nRows: number;
 }
+
+const W = 20;
+const H = 2.5 * W;
 
 const prepareData = (
   bandConfig: PatternRow[],
@@ -29,96 +31,137 @@ const Pattern: React.FC<PatternProps> = ({
   repeaterGroups,
   useMirror,
   useShadow,
-  nRows = 25,
 }) => {
-  const data = prepareData(bandConfig, repeaterGroups, useMirror);
-  const W = 20;
-  const H = 2.5 * W;
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [containerSize, setContainerSize] = useState({ width: 1, height: 1 });
+
+  useEffect(() => {
+    const node = containerRef.current;
+    if (!node) return;
+    const ro = new ResizeObserver(([entry]) => {
+      const { width, height } = entry.contentRect;
+      if (width > 0 && height > 0) {
+        setContainerSize({ width, height });
+      }
+    });
+    ro.observe(node);
+    return () => ro.disconnect();
+  }, []);
+
+  const data = useMemo(
+    () => prepareData(bandConfig, repeaterGroups, useMirror),
+    [bandConfig, repeaterGroups, useMirror],
+  );
+
   const hexPerRow = data[0].colors.length;
+  const tileHeight = (data.length * H * 3) / 4;
+
+  // Band's natural width in SVG user units
+  const bandWidth = ((hexPerRow + 8) / 2) * W;
+
+  // Scale: SVG units per pixel (band fills container width)
+  const scale = bandWidth / containerSize.width;
+
+  // Visible height in SVG units, matching the container's aspect ratio
+  const visibleHeight = containerSize.height * scale;
+
+  // Enough tile repeats to fill the visible height, plus a buffer
+  const repeatCount = Math.ceil(visibleHeight / tileHeight) + 2;
+
+  const vbX = -2 * W;
+  const vbY = (-2 + 2.5) * H;
+
+  const tile = useMemo(() => {
+    return data.flatMap((row, rowIdx) =>
+      row.colors.map((color, colIdx) => {
+        if (color === null) return null;
+
+        const cx = (colIdx / 2) * W;
+        const cy = (rowIdx * H * 3) / 4;
+
+        const points = [
+          [cx + W / 2, cy],
+          [cx + W, cy + H / 4],
+          [cx + W, cy + (3 * H) / 4],
+          [cx + W / 2, cy + H],
+          [cx, cy + (3 * H) / 4],
+          [cx, cy + H / 4],
+        ];
+
+        const pointsStr = points.map(([x, y]) => `${x},${y}`).join(" ");
+
+        return (
+          <Fragment key={`${rowIdx}-${colIdx}`}>
+            <polygon
+              points={pointsStr}
+              fill={color.hex}
+              stroke={useShadow ? "rgba(0, 0, 0, 0.02)" : undefined}
+              strokeWidth={18}
+            />
+
+            {useShadow ? (
+              <>
+                <polygon
+                  points={pointsStr}
+                  fill={"transparent"}
+                  stroke="rgba(0, 0, 0, 0.03)"
+                  strokeWidth={14}
+                />
+                <polygon
+                  points={pointsStr}
+                  fill={"transparent"}
+                  stroke="rgba(0, 0, 0, 0.03)"
+                  strokeWidth={8}
+                />
+                <polygon
+                  points={pointsStr}
+                  fill={"transparent"}
+                  stroke="rgba(0, 0, 0, 0.01)"
+                  strokeWidth={3}
+                />
+              </>
+            ) : null}
+          </Fragment>
+        );
+      }),
+    );
+  }, [data, useShadow]);
+
+  const tileInstances = useMemo(() => {
+    return Array.from({ length: repeatCount }, (_, i) => (
+      <use
+        key={i}
+        href="#bandTile"
+        transform={`translate(0, ${i * tileHeight})`}
+      />
+    ));
+  }, [repeatCount, tileHeight]);
 
   return (
-    <svg
-      width="100%"
-      height="100%"
-      viewBox={`${-2 * W} ${(-2 + 2.5) * H} ${((hexPerRow + 8) / 2) * W} ${
-        (3 * nRows + 3.5 - 4.5) * H
-      }`}
-      preserveAspectRatio="xMidYMin meet"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <defs>
-        <filter id="dropShadow" x="-50%" y="-50%" width="200%" height="200%">
-          <feDropShadow
-            dx="0"
-            dy="0"
-            stdDeviation="10"
-            floodColor="black"
-            floodOpacity="0.25"
-          />
-        </filter>
-      </defs>
+    <div ref={containerRef} style={{ width: "100%", height: "100%" }}>
+      <svg
+        width="100%"
+        height="100%"
+        viewBox={`${vbX} ${vbY} ${bandWidth} ${visibleHeight}`}
+        preserveAspectRatio="xMidYMin meet"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <defs>
+          <filter id="dropShadow" x="-50%" y="-50%" width="200%" height="200%">
+            <feDropShadow
+              dx="0"
+              dy="0"
+              stdDeviation="10"
+              floodColor="black"
+              floodOpacity="0.25"
+            />
+          </filter>
+          <g id="bandTile">{tile}</g>
+        </defs>
 
-      <g filter="url(#dropShadow)">
-        {Array.from({ length: 2 * nRows }).flatMap((_, repeatIdx) =>
-          data.map((row, rowIdx) =>
-            row.colors.map((color, colIdx) => {
-              if (color === null) return null;
-
-              // Calculate the center of the hexagon
-              const cx = (colIdx / 2) * W;
-              const cy = ((repeatIdx * data.length + rowIdx) * H * 3) / 4;
-
-              // Define the points for the polygon (similar to the original Python code)
-              const points = [
-                [cx + W / 2, cy],
-                [cx + W, cy + H / 4],
-                [cx + W, cy + (3 * H) / 4],
-                [cx + W / 2, cy + H],
-                [cx, cy + (3 * H) / 4],
-                [cx, cy + H / 4],
-              ];
-
-              // Create the points string for the SVG polygon
-              const pointsStr = points.map(([x, y]) => `${x},${y}`).join(" ");
-
-              return (
-                <Fragment key={`${rowIdx}-${colIdx}`}>
-                  <polygon
-                    points={pointsStr}
-                    fill={color.hex}
-                    stroke={useShadow ? "rgba(0, 0, 0, 0.02)" : undefined}
-                    strokeWidth={18}
-                  />
-
-                  {useShadow ? (
-                    <>
-                      <polygon
-                        points={pointsStr}
-                        fill={"transparent"}
-                        stroke="rgba(0, 0, 0, 0.03)"
-                        strokeWidth={14}
-                      />
-                      <polygon
-                        points={pointsStr}
-                        fill={"transparent"}
-                        stroke="rgba(0, 0, 0, 0.03)"
-                        strokeWidth={8}
-                      />
-                      <polygon
-                        points={pointsStr}
-                        fill={"transparent"}
-                        stroke="rgba(0, 0, 0, 0.01)"
-                        strokeWidth={3}
-                      />
-                    </>
-                  ) : null}
-                </Fragment>
-              );
-            }),
-          ),
-        )}{" "}
-      </g>
-    </svg>
+        <g filter="url(#dropShadow)">{tileInstances}</g>
+      </svg>
+    </div>
   );
 };
 

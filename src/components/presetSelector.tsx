@@ -37,7 +37,7 @@ const PresetSelector = ({ setPresetFn }: PresetSelectorProps) => {
         </SelectContent>
       </Select>
       {/* <Button variant="outline" onClick={() => setPresetFn(selectedPreset)}>
-        <DoubleArrowUpIcon className="h-4 w-4 mr-2" />
+        <DoubleArrowUpIcon className="h-4 w-4" />
         Load pattern
       </Button> */}
     </div>

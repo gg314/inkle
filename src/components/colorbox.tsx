@@ -93,7 +93,7 @@ const ColorBox = ({
                             }}
                           >
                             <div
-                              className="h-4 w-4 mr-2 rounded-sm border border-gray-300"
+                              className="h-4 w-4 rounded-sm border border-gray-300"
                               style={{ backgroundColor: color.hex }}
                             ></div>
                             <span>{color.name}</span>
