@@ -108,6 +108,7 @@ const BLANK_BUTTON = (
 
 function App() {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [logoSrc] = useState(() => `/logo${Math.ceil(Math.random() * 6)}.png`);
   const [useMirror, setUseMirror] = useState(false);
   const [useShadow, setUseShadow] = useState(true);
 
@@ -369,7 +370,7 @@ function App() {
         <div className="bg-muted px-6 pt-8 pb-8">
           <div className="mb-6">
             <img
-              src="/preview-image.png"
+              src="/preview-image.jpg"
               alt="Inkle Pattern Designer showing a warping draft with colored thread rows and a woven band preview"
               className="rounded-lg border shadow-sm w-full"
               width="1200"
@@ -553,9 +554,9 @@ function App() {
         <div className="flex flex-col items-start justify-between space-y-2 py-[11px] sm:flex-row sm:items-center sm:space-y-0 md:h-14 px-4">
           <div className="flex items-center gap-2">
             <img
-              src="/logo.png"
+              src={logoSrc}
               alt="Inkle logo"
-              className="w-[40px] select-none pointer-events-none"
+              className="w-[30px] select-none pointer-events-none"
             />
             <h2 className="text-lg whitespace-nowrap font-light font-display">
               Inkle Pattern Designer
