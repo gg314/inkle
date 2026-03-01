@@ -2,10 +2,10 @@ import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import { ALL_COLORS, presetPatterns } from "@/assets/presets/presets";
 import "./App.css";
 import {
+  BlendingModeIcon,
   BookmarkIcon,
   ChevronDownIcon,
   ColorWheelIcon,
-  ColumnsIcon,
   CopyIcon,
   Cross2Icon,
   DownloadIcon,
@@ -634,15 +634,15 @@ function App() {
                     <div>
                       <TabsList className="mb-4">
                         <TabsTrigger value="designer">
-                          <GridIcon className="h-4 w-4" />
+                          <Pencil2Icon className="h-4 w-4" />
                           Band Designer
                         </TabsTrigger>
                         <TabsTrigger value="generator">
-                          <ShuffleIcon className="h-4 w-4" />
+                          <MagicWandIcon className="h-4 w-4" />
                           Random Generator
                         </TabsTrigger>
                         <TabsTrigger value="colors">
-                          <ColorWheelIcon className="h-4 w-4" />
+                          <BlendingModeIcon className="h-4 w-4" />
                           Available Colors
                         </TabsTrigger>
                         <TabsTrigger value="settings">
@@ -981,7 +981,7 @@ function App() {
             </div>
           </ResizablePanel>
           <ResizableHandle withHandle />
-          <ResizablePanel defaultSize="8%" minSize="8%" maxSize="50%">
+          <ResizablePanel defaultSize="8%" minSize="6%" maxSize="50%">
             <div className="h-full px-8 bg-gray-50 overflow-hidden">
               <Pattern
                 bandConfig={rows}
