@@ -357,12 +357,12 @@ function App() {
         {/* Hero */}
         <div className="px-6 pt-12 pb-8 text-center">
           <h1 className="text-3xl font-bold tracking-tight mb-3 text-foreground font-display">
-            Inkle Pattern Designer
+            Inkle Loom Pattern Designer
           </h1>
           <p className="text-muted-foreground text-base leading-relaxed">
-            A free tool for designing inkle loom weaving patterns. Build your
-            warping draft visually, assign any colors you like, and preview your
-            band before you warp.
+            A free, beginner-friendly tool for designing inkle loom weaving
+            patterns. Build your warping draft visually, assign any colors you
+            like, and preview your band before you warp.
           </p>
         </div>
 
@@ -558,9 +558,9 @@ function App() {
               alt="Inkle logo"
               className="w-[30px] select-none pointer-events-none"
             />
-            <h2 className="text-lg whitespace-nowrap font-light font-display">
-              Inkle Pattern Designer
-            </h2>
+            <h1 className="text-lg whitespace-nowrap font-light font-display">
+              Inkle Loom Pattern Designer
+            </h1>
           </div>
           <div className="ml-auto flex w-full space-x-2 sm:justify-end">
             <input
