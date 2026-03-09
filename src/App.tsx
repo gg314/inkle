@@ -28,6 +28,12 @@ import ColorSettings from "@/components/pages/colors";
 import RandomGenerator from "@/components/pages/generator";
 import Pattern from "@/components/pattern";
 import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -456,6 +462,61 @@ function App() {
               </div>
             </div>
           </div>
+        </div>
+
+        {/* FAQ */}
+        <div className="px-6 pt-8 pb-8">
+          <h2 className="text-lg font-semibold mb-2 text-foreground font-display">
+            Frequently asked questions
+          </h2>
+          <Accordion type="single" collapsible>
+            <AccordionItem value="what-is-inkle-loom">
+              <AccordionTrigger>What is an inkle loom?</AccordionTrigger>
+              <AccordionContent className="text-muted-foreground leading-relaxed">
+                An inkle loom is a simple frame loom used to weave narrow bands
+                and straps. It's one of the easiest looms to learn on, making it
+                popular with beginners. Inkle bands are woven by raising and
+                lowering alternating warp threads to create colorful patterns.
+              </AccordionContent>
+            </AccordionItem>
+            <AccordionItem value="how-to-design">
+              <AccordionTrigger>
+                How do I design an inkle loom pattern?
+              </AccordionTrigger>
+              <AccordionContent className="text-muted-foreground leading-relaxed">
+                You can design inkle loom patterns using a warping draft — a
+                grid that shows which color thread goes in each position. This
+                tool lets you build drafts visually, assign colors, and preview
+                how the finished band will look before you start warping your
+                loom.
+              </AccordionContent>
+            </AccordionItem>
+            <AccordionItem value="is-free">
+              <AccordionTrigger>Is this tool free?</AccordionTrigger>
+              <AccordionContent className="text-muted-foreground leading-relaxed">
+                Yes, completely free. There are no accounts, subscriptions, or
+                paywalls. You can save and load your patterns as files on your
+                own computer.
+              </AccordionContent>
+            </AccordionItem>
+            <AccordionItem value="experience">
+              <AccordionTrigger>Do I need weaving experience?</AccordionTrigger>
+              <AccordionContent className="text-muted-foreground leading-relaxed">
+                No experience is needed. The designer includes a library of
+                ready-made pattern templates you can start from, and you can
+                generate random patterns to explore different designs.
+              </AccordionContent>
+            </AccordionItem>
+            <AccordionItem value="warping-draft">
+              <AccordionTrigger>What is a warping draft?</AccordionTrigger>
+              <AccordionContent className="text-muted-foreground leading-relaxed">
+                A warping draft is a chart that maps out the color and position
+                of every warp thread on an inkle loom. Each row represents a
+                pair of threads — one heddled and one unheddled. The draft
+                determines the pattern that appears in the finished woven band.
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
         </div>
 
         {/* PDF Resources */}
