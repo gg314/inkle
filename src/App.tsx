@@ -253,12 +253,13 @@ function App() {
   };
 
   const isValidRepeater = (repeater: Repeater): boolean => {
-    if (repeater.start >= repeater.end) return false;
+    if (repeater.length <= 0) return false;
+    if (repeater.start < 0) return false;
+    if (repeater.start + repeater.length > rows[0].colors.length) return false;
 
-    // Range must be a multiple of the number of rows
-    const rangeLength = repeater.end - repeater.start;
+    // Length must be a multiple of the number of rows
     const rowCount = bandMode === "krokbragd" ? 3 : 2;
-    return rangeLength % rowCount === 0;
+    return repeater.length % rowCount === 0;
   };
 
   // Filter out invalid repeaters for display purposes
@@ -353,7 +354,7 @@ function App() {
 
   const savePattern = () => {
     const patternData = {
-      version: "1.0",
+      version: "1.1",
       mode: bandMode,
       title: patternTitle,
       creator: creatorName,
@@ -1226,7 +1227,8 @@ function App() {
                                             className="w-8 flex-shrink-0"
                                           ></div>
                                         ));
-                                        cursor = repeater.end;
+                                        cursor =
+                                          repeater.start + repeater.length;
 
                                         const repeaterHtml = (
                                           <div
@@ -1320,7 +1322,7 @@ function App() {
                         </h4>
                         <p className="text-sm text-muted-foreground mb-4">
                           Repeaters duplicate a section of your pattern. The
-                          range must be a multiple of{" "}
+                          length must be a multiple of{" "}
                           {bandMode === "krokbragd"
                             ? "3 (matching H1, U2, U3 rows)"
                             : "2 (equal H and U threads)"}
@@ -1389,22 +1391,22 @@ function App() {
                                         className="h-8 w-16"
                                       />
                                       <Label
-                                        htmlFor={`repeater-${idx}-end`}
+                                        htmlFor={`repeater-${idx}-length`}
                                         className="text-sm font-normal whitespace-nowrap"
                                       >
-                                        End:
+                                        Length:
                                       </Label>
                                       <Input
-                                        id={`repeater-${idx}-end`}
+                                        id={`repeater-${idx}-length`}
                                         type="number"
-                                        min={0}
-                                        max={rows[0].colors.length - 1}
-                                        value={repeater.end}
+                                        min={1}
+                                        max={rows[0].colors.length}
+                                        value={repeater.length}
                                         onChange={(e) => {
                                           saveSnapshot();
                                           const newRepeaters = [...repeaters];
-                                          newRepeaters[idx].end =
-                                            parseInt(e.target.value) || 0;
+                                          newRepeaters[idx].length =
+                                            parseInt(e.target.value) || 1;
                                           setRepeaters(newRepeaters);
                                         }}
                                         className="h-8 w-16"
@@ -1432,9 +1434,13 @@ function App() {
                                     </div>
                                     {!isValid && (
                                       <p className="text-xs text-red-600 pb-2">
-                                        {repeater.start >= repeater.end
-                                          ? "Start must be less than end"
-                                          : `Range must be a multiple of ${bandMode === "krokbragd" ? 3 : 2} (currently ${repeater.end - repeater.start})`}
+                                        {repeater.length <= 0
+                                          ? "Length must be positive"
+                                          : repeater.start < 0 ||
+                                              repeater.start + repeater.length >
+                                                rows[0].colors.length
+                                            ? "Repeater extends beyond pattern. Decrease Start or Length"
+                                            : `Length must be a multiple of ${bandMode === "krokbragd" ? 3 : 2} (currently ${repeater.length})`}
                                       </p>
                                     )}
                                   </div>
@@ -1448,7 +1454,7 @@ function App() {
                               saveSnapshot();
                               setRepeaters([
                                 ...repeaters,
-                                { start: 0, end: 2, count: 2 },
+                                { start: 0, length: 2, count: 2 },
                               ]);
                             }}
                           >
