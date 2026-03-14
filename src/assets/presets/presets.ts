@@ -385,7 +385,7 @@ export const presetPatterns: PresetPattern[] = [
     repeaters: [{ count: 2, start: 5, length: 14 }],
   },
   {
-    name: "Krokbragd: Flower Border",
+    name: "Flower Border",
     mode: "krokbragd",
     band: [
       {
@@ -488,7 +488,7 @@ export const presetPatterns: PresetPattern[] = [
     repeaters: [{ count: 4, start: 14, length: 3 }],
   },
   {
-    name: "Krokbragd: Traditional",
+    name: "Traditional",
     mode: "krokbragd",
     band: [
       {
@@ -699,7 +699,7 @@ export const presetPatterns: PresetPattern[] = [
     ],
   },
   {
-    name: "Krokbragd: Simple Sheep",
+    name: "Simple Sheep",
     mode: "krokbragd",
     band: [
       {
@@ -964,7 +964,7 @@ export const presetPatterns: PresetPattern[] = [
     repeaters: [],
   },
   {
-    name: "Krokbragd: Circles and Ovals",
+    name: "Circles and Ovals",
     mode: "krokbragd",
     band: [
       {

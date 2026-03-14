@@ -759,23 +759,33 @@ function App() {
                     New from Template
                   </DropdownMenuSubTrigger>
                   <DropdownMenuSubContent className="w-auto whitespace-nowrap">
-                    {presetPatterns.map((preset, idx) => (
-                      <DropdownMenuItem
-                        key={idx}
-                        onClick={() => setPreset(preset)}
-                      >
-                        {preset.mode === "krokbragd" ? (
-                          <>
-                            <span className="text-muted-foreground italic">
-                              Krokbragd:
-                            </span>{" "}
-                            {preset.name.replace(/^Krokbragd: /, "")}
-                          </>
-                        ) : (
-                          preset.name
-                        )}
-                      </DropdownMenuItem>
-                    ))}
+                    <DropdownMenuLabel className="text-xs uppercase tracking-wide text-muted-foreground font-medium">
+                      Standard
+                    </DropdownMenuLabel>
+                    {presetPatterns
+                      .filter((p) => !p.mode || p.mode === "basic")
+                      .map((preset, idx) => (
+                        <DropdownMenuItem
+                          key={`basic-${idx}`}
+                          onClick={() => setPreset(preset)}
+                        >
+                          {preset.name}
+                        </DropdownMenuItem>
+                      ))}
+                    <DropdownMenuSeparator />
+                    <DropdownMenuLabel className="text-xs uppercase tracking-wide text-muted-foreground font-medium">
+                      Krokbragd
+                    </DropdownMenuLabel>
+                    {presetPatterns
+                      .filter((p) => p.mode === "krokbragd")
+                      .map((preset, idx) => (
+                        <DropdownMenuItem
+                          key={`krok-${idx}`}
+                          onClick={() => setPreset(preset)}
+                        >
+                          {preset.name}
+                        </DropdownMenuItem>
+                      ))}
                   </DropdownMenuSubContent>
                 </DropdownMenuSub>
                 <DropdownMenuSeparator />
