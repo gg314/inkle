@@ -83,11 +83,11 @@ export const presetPatterns: PresetPattern[] = [
       },
     ],
     repeaters: [
-      { count: 2, start: 5, end: 7 },
-      { count: 2, start: 7, end: 9 },
-      { count: 2, start: 9, end: 11 },
-      { count: 3, start: 3, end: 7 },
-      { count: 3, start: 7, end: 11 },
+      { count: 2, start: 5, length: 2 },
+      { count: 2, start: 7, length: 2 },
+      { count: 2, start: 9, length: 2 },
+      { count: 3, start: 3, length: 4 },
+      { count: 3, start: 7, length: 4 },
     ],
   },
   {
@@ -131,10 +131,10 @@ export const presetPatterns: PresetPattern[] = [
       },
     ],
     repeaters: [
-      { count: 2, start: 0, end: 2 },
-      { count: 5, start: 2, end: 4 },
-      { count: 5, start: 4, end: 6 },
-      { count: 5, start: 8, end: 10 },
+      { count: 2, start: 0, length: 2 },
+      { count: 5, start: 2, length: 2 },
+      { count: 5, start: 4, length: 2 },
+      { count: 5, start: 8, length: 2 },
     ],
   },
   {
@@ -170,9 +170,9 @@ export const presetPatterns: PresetPattern[] = [
       },
     ],
     repeaters: [
-      { count: 2, start: 3, end: 5 },
-      { count: 2, start: 5, end: 7 },
-      { count: 4, start: 3, end: 7 },
+      { count: 2, start: 3, length: 2 },
+      { count: 2, start: 5, length: 2 },
+      { count: 4, start: 3, length: 4 },
     ],
   },
   {
@@ -212,10 +212,10 @@ export const presetPatterns: PresetPattern[] = [
       },
     ],
     repeaters: [
-      { count: 3, start: 3, end: 5 },
-      { count: 2, start: 3, end: 7 },
-      { count: 3, start: 5, end: 7 },
-      { count: 3, start: 7, end: 9 },
+      { count: 3, start: 3, length: 2 },
+      { count: 2, start: 3, length: 4 },
+      { count: 3, start: 5, length: 2 },
+      { count: 3, start: 7, length: 2 },
     ],
   },
   {
@@ -262,7 +262,7 @@ export const presetPatterns: PresetPattern[] = [
         ],
       },
     ],
-    repeaters: [{ count: 3, start: 3, end: 15 }],
+    repeaters: [{ count: 3, start: 3, length: 12 }],
   },
   {
     name: "Triple Stripes in Opposition",
@@ -305,9 +305,9 @@ export const presetPatterns: PresetPattern[] = [
       },
     ],
     repeaters: [
-      { count: 3, start: 3, end: 5 },
-      { count: 3, start: 8, end: 10 },
-      { count: 2, start: 3, end: 13 },
+      { count: 3, start: 3, length: 2 },
+      { count: 3, start: 8, length: 2 },
+      { count: 2, start: 3, length: 10 },
     ],
   },
   {
@@ -382,7 +382,7 @@ export const presetPatterns: PresetPattern[] = [
         ],
       },
     ],
-    repeaters: [{ count: 2, start: 5, end: 19 }],
+    repeaters: [{ count: 2, start: 5, length: 14 }],
   },
   {
     name: "Krokbragd: Flower Border",
@@ -485,7 +485,7 @@ export const presetPatterns: PresetPattern[] = [
         ],
       },
     ],
-    repeaters: [{ count: 4, start: 14, end: 17 }],
+    repeaters: [{ count: 4, start: 14, length: 3 }],
   },
   {
     name: "Krokbragd: Traditional",
@@ -688,14 +688,14 @@ export const presetPatterns: PresetPattern[] = [
       },
     ],
     repeaters: [
-      { count: 2, start: 5, end: 8 },
-      { count: 2, start: 8, end: 11 },
-      { count: 2, start: 17, end: 20 },
-      { count: 2, start: 26, end: 29 },
-      { count: 4, start: 29, end: 32 },
-      { count: 2, start: 35, end: 38 },
-      { count: 2, start: 44, end: 47 },
-      { count: 3, start: 53, end: 56 },
+      { count: 2, start: 5, length: 3 },
+      { count: 2, start: 8, length: 3 },
+      { count: 2, start: 17, length: 3 },
+      { count: 2, start: 26, length: 3 },
+      { count: 4, start: 29, length: 3 },
+      { count: 2, start: 35, length: 3 },
+      { count: 2, start: 44, length: 3 },
+      { count: 3, start: 53, length: 3 },
     ],
   },
   {
@@ -1110,9 +1110,9 @@ export const presetPatterns: PresetPattern[] = [
       },
     ],
     repeaters: [
-      { start: 8, end: 11, count: 2 },
-      { start: 20, end: 23, count: 3 },
-      { start: 32, end: 35, count: 4 },
+      { start: 8, length: 3, count: 2 },
+      { start: 20, length: 3, count: 3 },
+      { start: 32, length: 3, count: 4 },
     ],
   },
 ];

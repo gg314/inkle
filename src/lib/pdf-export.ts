@@ -241,9 +241,10 @@ function drawDraftRows(
     for (let gi = 0; gi < repeaterGroups.length; gi++) {
       const groupOffsetY = gi * (bracketH + 0.12);
       for (const repeater of repeaterGroups[gi]) {
+        const repeaterEnd = repeater.start + repeater.length;
         // Clamp repeater range to this line's visible columns
         const rStart = Math.max(repeater.start, line.colStart);
-        const rEnd = Math.min(repeater.end, line.colEnd);
+        const rEnd = Math.min(repeaterEnd, line.colEnd);
         if (rStart >= rEnd) continue;
 
         const leftX = startX + (rStart - line.colStart) * cellSize;
@@ -252,7 +253,7 @@ function drawDraftRows(
         const botY = topY + bracketH;
 
         const isRealStart = rStart === repeater.start;
-        const isRealEnd = rEnd === repeater.end;
+        const isRealEnd = rEnd === repeaterEnd;
 
         doc.setDrawColor(60);
         doc.setLineWidth(0.008);

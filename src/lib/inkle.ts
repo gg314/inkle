@@ -15,15 +15,18 @@ function expandRepeaterIndices(
   let totalShiftStart = 0;
   let totalShiftStop = 0;
 
-  for (const prevRepeater of previousRepeaters) {
-    const lengthAdded = repeaterLength(prevRepeater) * prevRepeater.count;
+  const end = repeater.start + repeater.length;
 
-    if (prevRepeater.end < repeater.start) {
+  for (const prevRepeater of previousRepeaters) {
+    const lengthAdded = prevRepeater.length * prevRepeater.count;
+    const prevEnd = prevRepeater.start + prevRepeater.length;
+
+    if (prevEnd < repeater.start) {
       // The previous repeater is entirely before the start of the current repeater
       totalShiftStart += lengthAdded;
     }
 
-    if (prevRepeater.end < repeater.end) {
+    if (prevEnd < end) {
       // The previous repeater is entirely before the end of the current repeater
       totalShiftStop += lengthAdded;
     }
@@ -32,7 +35,7 @@ function expandRepeaterIndices(
   return {
     ...repeater,
     start: repeater.start + totalShiftStart,
-    end: repeater.end + totalShiftStop,
+    length: repeater.length + totalShiftStop - totalShiftStart,
   };
 }
 
@@ -78,7 +81,8 @@ export function expandData(
 
       // Process each repeater in the group from right to left
       for (const repeater of sortedRepeaters) {
-        const { count, start, end } = repeater;
+        const { count, start, length } = repeater;
+        const end = start + length;
 
         // Extract the section to be repeated
         const section = colors.slice(start, end + 1);
@@ -100,7 +104,7 @@ export function expandData(
 
 export function repeat<T>(
   colors: T[],
-  repeaterGroups: { count: number; start: number; end: number }[][],
+  repeaterGroups: { count: number; start: number; length: number }[][],
 ): T[] {
   let currentColors: T[] = [...colors];
   let indices: number[] = [];
@@ -113,22 +117,20 @@ export function repeat<T>(
     let lastEnd: number = 0;
     let indicesToSkip: number = 0;
     for (const repeater of repeaterGroup) {
+      const end = repeater.start + repeater.length;
       newColors.push(
         ...currentColors.slice(indices[lastEnd], indices[repeater.start]),
       );
-      for (let i = lastEnd; i < repeater.end; i++) {
+      for (let i = lastEnd; i < end; i++) {
         newIndices.push(indicesToSkip + i);
       }
       for (let c = 0; c < repeater.count; c++) {
         newColors.push(
-          ...currentColors.slice(
-            indices[repeater.start],
-            indices[repeater.end],
-          ),
+          ...currentColors.slice(indices[repeater.start], indices[end]),
         );
       }
-      indicesToSkip += (repeater.count - 1) * (repeater.end - repeater.start);
-      lastEnd = repeater.end;
+      indicesToSkip += (repeater.count - 1) * repeater.length;
+      lastEnd = end;
     }
     newColors.push(
       ...currentColors.slice(indices[lastEnd], currentColors.length),
@@ -206,7 +208,7 @@ export function sortColors(colors: Color[]): Color[] {
 }
 
 export function repeaterLength(repeater: Repeater): number {
-  return repeater.end - repeater.start;
+  return repeater.length;
 }
 
 /**
@@ -217,11 +219,9 @@ export function repeaterLength(repeater: Repeater): number {
 export function groupNonOverlappingRepeaters(
   repeaters: Repeater[],
 ): Repeater[][] {
-  // Sort the repeaters by length (end - start) and then by start
+  // Sort the repeaters by length and then by start
   const sortedRepeaters = [...repeaters].sort((a, b) => {
-    const lengthA = a.end - a.start;
-    const lengthB = b.end - b.start;
-    return lengthA - lengthB || a.start - b.start;
+    return a.length - b.length || a.start - b.start;
   });
 
   // Initialize the array of groups
@@ -281,5 +281,7 @@ export function groupNonOverlappingRepeaters(
 
 // Helper function to check if two repeaters overlap
 function overlaps(r1: Repeater, r2: Repeater): boolean {
-  return !(r1.end <= r2.start || r2.end <= r1.start);
+  const r1End = r1.start + r1.length;
+  const r2End = r2.start + r2.length;
+  return !(r1End <= r2.start || r2End <= r1.start);
 }

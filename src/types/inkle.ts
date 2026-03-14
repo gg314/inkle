@@ -15,7 +15,7 @@ export type PatternRow = {
 export type Repeater = {
   count: number;
   start: number;
-  end: number;
+  length: number;
 };
 
 export type PresetPattern = {
