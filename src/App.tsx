@@ -24,6 +24,7 @@ import {
 } from "@radix-ui/react-icons";
 import { Eraser, Paintbrush, Pipette, Redo2, Undo2 } from "lucide-react";
 import { Toaster, toast } from "sonner";
+import KrokbragdPattern from "@/components/krokbragd-pattern";
 import ColorSettings from "@/components/pages/colors";
 import RandomGenerator from "@/components/pages/generator";
 import Pattern from "@/components/pattern";
@@ -85,6 +86,13 @@ import {
   ResizablePanelGroup,
 } from "@/components/ui/resizable";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
@@ -96,11 +104,23 @@ import {
 } from "@/components/ui/tooltip";
 import { useHistory } from "@/hooks/useHistory";
 import {
+  getDefaultRows,
+  getKrokbragdOwner,
+  KROKBRAGD_MIN_WARPS,
+} from "@/lib/defaults";
+import {
   groupNonOverlappingRepeaters,
   mirrorData,
   repeaterLength,
 } from "@/lib/inkle";
-import { Color, PatternRow, PresetPattern, Repeater } from "@/types/inkle";
+import { exportPdf } from "@/lib/pdf-export";
+import {
+  BandMode,
+  Color,
+  PatternRow,
+  PresetPattern,
+  Repeater,
+} from "@/types/inkle";
 
 const BLANK_BUTTON = (
   <div
@@ -118,7 +138,10 @@ function App() {
   const [useMirror, setUseMirror] = useState(false);
   const [useShadow, setUseShadow] = useState(true);
 
+  const [bandMode, setBandMode] = useState<BandMode>("basic");
+  const [pendingMode, setPendingMode] = useState<BandMode | null>(null);
   const [patternTitle, setPatternTitle] = useState("");
+  const [creatorName, setCreatorName] = useState("");
   const [colors, setColors] = useState<Color[]>(ALL_COLORS);
   const [clearDialogOpen, setClearDialogOpen] = useState(false);
   const [selectedColor, setSelectedColor] = useState<Color>(
@@ -130,11 +153,12 @@ function App() {
     "paint" | "erase" | "eyedropper"
   >("paint");
   const [paintPickerOpen, setPaintPickerOpen] = useState(false);
-  const [rows, setRows] = useState<PatternRow[]>(
-    presetPatterns[presetPatterns.length - 1].band,
-  );
+  const defaultPreset =
+    [...presetPatterns].reverse().find((p) => !p.mode || p.mode === "basic") ??
+    presetPatterns[0];
+  const [rows, setRows] = useState<PatternRow[]>(defaultPreset.band);
   const [repeaters, setRepeaters] = useState<Repeater[]>(
-    presetPatterns[presetPatterns.length - 1].repeaters,
+    defaultPreset.repeaters,
   );
   const { saveSnapshot, undo, redo, canUndo, canRedo } = useHistory(
     rows,
@@ -171,20 +195,33 @@ function App() {
     saveSnapshot();
     setRows((oldRows) =>
       oldRows.map((row) => {
+        if (bandMode === "krokbragd") {
+          // Insert before the last 4 (right border) columns
+          const insertAt = row.colors.length - 4;
+          const colors = [...row.colors];
+          colors.splice(insertAt, 0, null);
+          return { ...row, colors };
+        }
         return { ...row, colors: [...row.colors, null] };
       }),
     );
-  }, [saveSnapshot]);
+  }, [saveSnapshot, bandMode]);
 
-  // remove 1 from the end of each pattern row
   const removeColor = useCallback(() => {
     saveSnapshot();
     setRows((oldRows) =>
       oldRows.map((row) => {
+        if (bandMode === "krokbragd") {
+          // Remove from end of middle section (just before right border)
+          const removeAt = row.colors.length - 5;
+          const colors = [...row.colors];
+          colors.splice(removeAt, 1);
+          return { ...row, colors };
+        }
         return { ...row, colors: row.colors.slice(0, -1) };
       }),
     );
-  }, [saveSnapshot]);
+  }, [saveSnapshot, bandMode]);
 
   const updateColor = useCallback(
     (rowIndex: number, colorIndex: number, color: Color | null) => {
@@ -212,13 +249,12 @@ function App() {
   };
 
   const isValidRepeater = (repeater: Repeater): boolean => {
-    // Start must be less than end
     if (repeater.start >= repeater.end) return false;
 
-    // The range must include an even number of positions
-    // This ensures we have equal H and U threads in the repeat
+    // Range must be a multiple of the number of rows
     const rangeLength = repeater.end - repeater.start;
-    return rangeLength % 2 === 0;
+    const rowCount = bandMode === "krokbragd" ? 3 : 2;
+    return rangeLength % rowCount === 0;
   };
 
   // Filter out invalid repeaters for display purposes
@@ -274,23 +310,30 @@ function App() {
 
   const setPreset = (preset: PresetPattern) => {
     saveSnapshot();
+    setBandMode(preset.mode ?? "basic");
     setRows(preset.band);
     setRepeaters(preset.repeaters);
     toast.success(`Loaded preset "${preset.name}"`);
   };
 
+  const requestModeChange = (mode: BandMode) => {
+    if (mode === bandMode) return;
+    setPendingMode(mode);
+  };
+
+  const confirmModeChange = () => {
+    if (!pendingMode) return;
+    saveSnapshot();
+    setBandMode(pendingMode);
+    setRows(getDefaultRows(pendingMode));
+    setRepeaters([]);
+    setUseMirror(false);
+    setPendingMode(null);
+  };
+
   const confirmClearPattern = () => {
     saveSnapshot();
-    setRows([
-      {
-        label: "H",
-        colors: [null, null, null, null, null],
-      },
-      {
-        label: "U",
-        colors: [null, null, null, null, null],
-      },
-    ]);
+    setRows(getDefaultRows(bandMode));
     setRepeaters([]);
     setUseMirror(false);
     setClearDialogOpen(false);
@@ -299,7 +342,9 @@ function App() {
   const savePattern = () => {
     const patternData = {
       version: "1.0",
+      mode: bandMode,
       title: patternTitle,
+      creator: creatorName,
       colors: colors,
       band: rows,
       repeaters: repeaters,
@@ -320,6 +365,22 @@ function App() {
     URL.revokeObjectURL(url);
   };
 
+  const exportPatternPdf = async () => {
+    try {
+      await exportPdf({
+        rows,
+        repeaterGroups: groupNonOverlappingRepeaters(validRepeaters),
+        useMirror,
+        patternTitle,
+        creatorName,
+        footerLabel: bandMode === "krokbragd" ? "Krokbragd" : "Basic",
+      });
+      toast.success("PDF exported");
+    } catch (error) {
+      toast.error("Error exporting PDF: " + (error as Error).message);
+    }
+  };
+
   const loadPattern = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -338,7 +399,9 @@ function App() {
 
         // Restore all settings
         saveSnapshot();
+        if (patternData.mode) setBandMode(patternData.mode);
         if (patternData.title) setPatternTitle(patternData.title);
+        if (patternData.creator) setCreatorName(patternData.creator);
         if (patternData.colors) setColors(patternData.colors);
         if (patternData.band) setRows(patternData.band);
         if (patternData.repeaters) setRepeaters(patternData.repeaters);
@@ -643,6 +706,13 @@ function App() {
                   <DownloadIcon className="h-4 w-4" />
                   Save Pattern...
                 </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={exportPatternPdf}
+                  disabled={bandMode === "krokbragd"}
+                >
+                  <FileTextIcon className="h-4 w-4" />
+                  Export PDF...
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => fileInputRef.current?.click()}>
                   <UploadIcon className="h-4 w-4" />
                   Load Pattern...
@@ -653,13 +723,22 @@ function App() {
                     <CopyIcon className="h-4 w-4" />
                     Load Preset
                   </DropdownMenuSubTrigger>
-                  <DropdownMenuSubContent className="w-48">
+                  <DropdownMenuSubContent className="w-auto whitespace-nowrap">
                     {presetPatterns.map((preset, idx) => (
                       <DropdownMenuItem
                         key={idx}
                         onClick={() => setPreset(preset)}
                       >
-                        {preset.name}
+                        {preset.mode === "krokbragd" ? (
+                          <>
+                            <span className="text-muted-foreground italic">
+                              Krokbragd:
+                            </span>{" "}
+                            {preset.name.replace(/^Krokbragd: /, "")}
+                          </>
+                        ) : (
+                          preset.name
+                        )}
                       </DropdownMenuItem>
                     ))}
                   </DropdownMenuSubContent>
@@ -747,10 +826,12 @@ function App() {
                           <Pencil2Icon className="h-4 w-4" />
                           Band Designer
                         </TabsTrigger>
-                        <TabsTrigger value="generator">
-                          <MagicWandIcon className="h-4 w-4" />
-                          Random Generator
-                        </TabsTrigger>
+                        {bandMode !== "krokbragd" && (
+                          <TabsTrigger value="generator">
+                            <MagicWandIcon className="h-4 w-4" />
+                            Random Generator
+                          </TabsTrigger>
+                        )}
                         <TabsTrigger value="colors">
                           <BlendingModeIcon className="h-4 w-4" />
                           Available Colors
@@ -998,47 +1079,57 @@ function App() {
                                         </span>
                                       </TooltipTrigger>
                                       <TooltipContent>
-                                        {row.label === "H"
+                                        {row.label === "H" || row.label === "H1"
                                           ? "Heddled"
                                           : "Unheddled"}
                                       </TooltipContent>
                                     </Tooltip>
                                   </TooltipProvider>
-                                  {row.colors.map((color, idx) => (
-                                    <Fragment key={idx}>
-                                      {color === null &&
-                                      (rowIdx + idx) % 2 === 1 ? (
-                                        BLANK_BUTTON
-                                      ) : (
-                                        <div
-                                          className="rounded-none border border-gray-700 w-8 h-8 p-0 flex-shrink-0 cursor-pointer"
-                                          style={
-                                            color?.hex
-                                              ? { backgroundColor: color.hex }
-                                              : {
-                                                  background:
-                                                    "repeating-linear-gradient(-45deg, transparent, transparent 4px, rgba(0,0,0,.08) 4px, rgba(0,0,0,.08) 8px)",
-                                                }
-                                          }
-                                          onClick={() => {
-                                            if (activeTool === "eyedropper") {
-                                              if (color) {
-                                                setSelectedColor(color);
-                                              }
-                                            } else if (activeTool === "erase") {
-                                              updateColor(rowIdx, idx, null);
-                                            } else {
-                                              updateColor(
-                                                rowIdx,
-                                                idx,
-                                                selectedColor,
-                                              );
+                                  {row.colors.map((color, idx) => {
+                                    const isCellDisabled =
+                                      bandMode === "krokbragd"
+                                        ? getKrokbragdOwner(
+                                            idx,
+                                            row.colors.length,
+                                          ) !== rowIdx
+                                        : (rowIdx + idx) % 2 === 1;
+                                    return (
+                                      <Fragment key={idx}>
+                                        {color === null && isCellDisabled ? (
+                                          BLANK_BUTTON
+                                        ) : (
+                                          <div
+                                            className="rounded-none border border-gray-700 w-8 h-8 p-0 flex-shrink-0 cursor-pointer"
+                                            style={
+                                              color?.hex
+                                                ? { backgroundColor: color.hex }
+                                                : {
+                                                    background:
+                                                      "repeating-linear-gradient(-45deg, transparent, transparent 4px, rgba(0,0,0,.08) 4px, rgba(0,0,0,.08) 8px)",
+                                                  }
                                             }
-                                          }}
-                                        />
-                                      )}
-                                    </Fragment>
-                                  ))}
+                                            onClick={() => {
+                                              if (activeTool === "eyedropper") {
+                                                if (color) {
+                                                  setSelectedColor(color);
+                                                }
+                                              } else if (
+                                                activeTool === "erase"
+                                              ) {
+                                                updateColor(rowIdx, idx, null);
+                                              } else {
+                                                updateColor(
+                                                  rowIdx,
+                                                  idx,
+                                                  selectedColor,
+                                                );
+                                              }
+                                            }}
+                                          />
+                                        )}
+                                      </Fragment>
+                                    );
+                                  })}
                                 </div>
                               ))}
 
@@ -1060,7 +1151,7 @@ function App() {
                                             className="w-8 flex-shrink-0"
                                           ></div>
                                         ));
-                                        cursor = repeater.end + 1;
+                                        cursor = repeater.end;
 
                                         const repeaterHtml = (
                                           <div
@@ -1101,7 +1192,12 @@ function App() {
                             <Button
                               variant="outline"
                               onClick={removeColor}
-                              disabled={rows[0].colors.length <= 1}
+                              disabled={
+                                rows[0].colors.length <=
+                                (bandMode === "krokbragd"
+                                  ? KROKBRAGD_MIN_WARPS
+                                  : 1)
+                              }
                             >
                               <MinusIcon className="h-4 w-4" /> Remove warp
                             </Button>
@@ -1109,7 +1205,7 @@ function App() {
                           <div className="flex items-center space-x-2">
                             <Button
                               variant="outline"
-                              disabled={!useMirror}
+                              disabled={!useMirror || bandMode === "krokbragd"}
                               onClick={addMirroredData}
                             >
                               <CopyIcon className="h-4 w-4" />
@@ -1126,6 +1222,7 @@ function App() {
                           <Checkbox
                             id="use-mirror"
                             checked={useMirror}
+                            disabled={bandMode === "krokbragd"}
                             onClick={() => setUseMirror(!useMirror)}
                           />
                           <div className="grid gap-2">
@@ -1133,7 +1230,9 @@ function App() {
                               Mirror pattern horizontally
                             </Label>
                             <p className="text-muted-foreground text-sm">
-                              Tip: start and finish in the "H" row
+                              {bandMode === "krokbragd"
+                                ? "Not available in Krokbragd mode"
+                                : 'Tip: start and finish in the "H" row'}
                             </p>
                           </div>
                         </div>
@@ -1143,8 +1242,11 @@ function App() {
                         </h4>
                         <p className="text-sm text-muted-foreground mb-4">
                           Repeaters duplicate a section of your pattern. The
-                          range must include an even number of positions (equal
-                          H and U threads).
+                          range must be a multiple of{" "}
+                          {bandMode === "krokbragd"
+                            ? "3 (matching H1, U2, U3 rows)"
+                            : "2 (equal H and U threads)"}
+                          .
                         </p>
 
                         <div className="mb-4">
@@ -1254,7 +1356,7 @@ function App() {
                                       <p className="text-xs text-red-600 pb-2">
                                         {repeater.start >= repeater.end
                                           ? "Start must be less than end"
-                                          : `Range must be even (currently ${repeater.end - repeater.start})`}
+                                          : `Range must be a multiple of ${bandMode === "krokbragd" ? 3 : 2} (currently ${repeater.end - repeater.start})`}
                                       </p>
                                     )}
                                   </div>
@@ -1304,6 +1406,37 @@ function App() {
 
                         <div className="mb-8">
                           <h4 className="scroll-m-20 text-xl font-semibold tracking-tight mb-4">
+                            Band Mode
+                          </h4>
+                          <div className="grid gap-3">
+                            <Label htmlFor="band-mode">Mode</Label>
+                            <Select
+                              value={bandMode}
+                              onValueChange={(value: BandMode) =>
+                                requestModeChange(value)
+                              }
+                            >
+                              <SelectTrigger
+                                className="w-[240px]"
+                                id="band-mode"
+                              >
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="basic">Basic</SelectItem>
+                                <SelectItem value="krokbragd">
+                                  Krokbragd
+                                </SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <p className="text-muted-foreground text-sm">
+                              Changing mode will reset your current pattern.
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="mb-8">
+                          <h4 className="scroll-m-20 text-xl font-semibold tracking-tight mb-4">
                             Pattern Information
                           </h4>
                           <div className="grid gap-3">
@@ -1315,6 +1448,15 @@ function App() {
                               placeholder="Enter pattern title"
                               value={patternTitle}
                               onChange={(e) => setPatternTitle(e.target.value)}
+                            />
+                            <Label htmlFor="creator-name">Creator</Label>
+                            <Input
+                              type="text"
+                              id="creator-name"
+                              className="w-[480px]"
+                              placeholder="Enter creator name"
+                              value={creatorName}
+                              onChange={(e) => setCreatorName(e.target.value)}
                             />
                             {/* TODO: Add description field in the future */}
                           </div>
@@ -1348,12 +1490,20 @@ function App() {
           <ResizableHandle withHandle />
           <ResizablePanel defaultSize="8%" minSize="6%" maxSize="50%">
             <div className="h-full px-8 bg-gray-50 overflow-hidden">
-              <Pattern
-                bandConfig={rows}
-                repeaterGroups={groupNonOverlappingRepeaters(validRepeaters)}
-                useMirror={useMirror}
-                useShadow={useShadow}
-              />
+              {bandMode === "krokbragd" ? (
+                <KrokbragdPattern
+                  bandConfig={rows}
+                  repeaterGroups={groupNonOverlappingRepeaters(validRepeaters)}
+                  useShadow={useShadow}
+                />
+              ) : (
+                <Pattern
+                  bandConfig={rows}
+                  repeaterGroups={groupNonOverlappingRepeaters(validRepeaters)}
+                  useMirror={useMirror}
+                  useShadow={useShadow}
+                />
+              )}
             </div>
           </ResizablePanel>
         </ResizablePanelGroup>
@@ -1375,6 +1525,33 @@ function App() {
               className="bg-red-600 hover:bg-red-700"
             >
               Clear Pattern
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog
+        open={pendingMode !== null}
+        onOpenChange={(open) => {
+          if (!open) setPendingMode(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Change Band Mode?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Switching to {pendingMode === "krokbragd" ? "Krokbragd" : "Basic"}{" "}
+              mode will reset your current pattern. This action cannot be
+              undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmModeChange}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Change Mode
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
