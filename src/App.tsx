@@ -21,6 +21,7 @@ import {
   Pencil2Icon,
   PlusIcon,
   QuestionMarkCircledIcon,
+  RulerSquareIcon,
   UploadIcon,
 } from "@radix-ui/react-icons";
 import { Eraser, Paintbrush, Pipette, Redo2, Undo2 } from "lucide-react";
@@ -579,6 +580,16 @@ function App() {
                 generate random patterns to explore different designs.
               </AccordionContent>
             </AccordionItem>
+            <AccordionItem value="krokbragd">
+              <AccordionTrigger>What is krokbragd?</AccordionTrigger>
+              <AccordionContent className="text-muted-foreground leading-relaxed">
+                Krokbragd is a Scandinavian three-shaft weaving technique that
+                produces bold, geometric patterns. It can be adapted for an
+                inkle loom using three separate sheds and a single shuttle. This
+                tool includes a dedicated krokbragd mode with draft editing,
+                band preview, and PDF export.
+              </AccordionContent>
+            </AccordionItem>
             <AccordionItem value="warping-draft">
               <AccordionTrigger>What is a warping draft?</AccordionTrigger>
               <AccordionContent className="text-muted-foreground leading-relaxed">
@@ -599,7 +610,7 @@ function App() {
           <p className="text-sm text-muted-foreground mb-4">
             Printable documents for inkle weavers
           </p>
-          <div className="flex flex-col gap-4">
+          <div className="grid grid-cols-2 gap-3 mb-4">
             <a
               href="/inkle-loom-pattern-standard.pdf"
               target="_blank"
@@ -615,36 +626,58 @@ function App() {
                 height="461"
                 loading="lazy"
               />
-              <div className="px-4 py-3">
-                <div className="font-medium text-sm">Pattern Template</div>
-                <div className="text-xs text-muted-foreground mt-1">
-                  Blank warping draft graph paper
+              <div className="px-3 py-2">
+                <div className="font-medium text-sm">Standard Template</div>
+                <div className="text-xs text-muted-foreground mt-0.5">
+                  Blank warping draft
                 </div>
               </div>
             </a>
             <a
-              href="/inkle-loom-plans.pdf"
+              href="/inkle-loom-pattern-krokbragd.pdf"
               target="_blank"
               rel="noopener noreferrer"
               style={{ color: "inherit", textDecoration: "none" }}
               className="rounded-lg border bg-white overflow-hidden transition-shadow duration-200 hover:shadow-[0_0_8px_rgba(0,0,0,0.12)]"
             >
               <img
-                src="/blueprints-thumbnail.png"
-                alt="Inkle loom woodworking plans"
+                src="/template-krokbragd-thumbnail.png"
+                alt="Blank krokbragd pattern template"
                 className="w-full"
                 width="600"
                 height="461"
                 loading="lazy"
               />
-              <div className="px-4 py-3">
-                <div className="font-medium text-sm">Inkle Loom Plans</div>
-                <div className="text-xs text-muted-foreground mt-1">
-                  Woodworking plans and dimensions
+              <div className="px-3 py-2">
+                <div className="font-medium text-sm">Krokbragd Template</div>
+                <div className="text-xs text-muted-foreground mt-0.5">
+                  3-shaft blank draft
                 </div>
               </div>
             </a>
           </div>
+          <a
+            href="/inkle-loom-plans.pdf"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ color: "inherit", textDecoration: "none" }}
+            className="block rounded-lg border bg-white overflow-hidden transition-shadow duration-200 hover:shadow-[0_0_8px_rgba(0,0,0,0.12)]"
+          >
+            <img
+              src="/blueprints-thumbnail.png"
+              alt="Inkle loom woodworking plans"
+              className="w-full"
+              width="600"
+              height="461"
+              loading="lazy"
+            />
+            <div className="px-4 py-3">
+              <div className="font-medium text-sm">Inkle Loom Plans</div>
+              <div className="text-xs text-muted-foreground mt-1">
+                Woodworking plans and dimensions
+              </div>
+            </div>
+          </a>
         </div>
 
         {/* Footer */}
@@ -765,6 +798,37 @@ function App() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-64">
+                <DropdownMenuSub>
+                  <DropdownMenuSubTrigger>
+                    <FileTextIcon className="h-4 w-4" />
+                    Blank Template PDFs
+                  </DropdownMenuSubTrigger>
+                  <DropdownMenuSubContent>
+                    <DropdownMenuItem
+                      onSelect={() =>
+                        window.open(
+                          "/inkle-loom-pattern-standard.pdf",
+                          "_blank",
+                          "noopener,noreferrer",
+                        )
+                      }
+                    >
+                      Standard
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onSelect={() =>
+                        window.open(
+                          "/inkle-loom-pattern-krokbragd.pdf",
+                          "_blank",
+                          "noopener,noreferrer",
+                        )
+                      }
+                    >
+                      Krokbragd
+                    </DropdownMenuItem>
+                  </DropdownMenuSubContent>
+                </DropdownMenuSub>
+                <DropdownMenuSeparator />
                 <DropdownMenuItem
                   onSelect={() =>
                     window.open(
@@ -774,20 +838,8 @@ function App() {
                     )
                   }
                 >
-                  <FileTextIcon className="h-4 w-4" />
-                  Build an Inkle Loom (PDF)
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onSelect={() =>
-                    window.open(
-                      "/inkle-loom-pattern-standard.pdf",
-                      "_blank",
-                      "noopener,noreferrer",
-                    )
-                  }
-                >
-                  <FileTextIcon className="h-4 w-4" />
-                  Blank Pattern Template (PDF)
+                  <RulerSquareIcon className="h-4 w-4" />
+                  Build an Inkle Loom
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
