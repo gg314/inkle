@@ -139,6 +139,9 @@ function App() {
   const [logoSrc] = useState(() => `/logo${Math.ceil(Math.random() * 6)}.png`);
   const [useMirror, setUseMirror] = useState(false);
   const [useShadow, setUseShadow] = useState(true);
+  const [previewBackground, setPreviewBackground] = useState<
+    "light-wood" | "medium-wood" | "dark-wood" | "plain"
+  >("light-wood");
 
   const [bandMode, setBandMode] = useState<BandMode>("basic");
   const [pendingMode, setPendingMode] = useState<BandMode | null>(null);
@@ -1551,6 +1554,38 @@ function App() {
                               </p>
                             </div>
                           </div>
+                          <div className="flex items-center gap-3 mt-4">
+                            <Label htmlFor="preview-background">
+                              Background
+                            </Label>
+                            <Select
+                              value={previewBackground}
+                              onValueChange={(v) =>
+                                setPreviewBackground(
+                                  v as typeof previewBackground,
+                                )
+                              }
+                            >
+                              <SelectTrigger
+                                id="preview-background"
+                                className="w-[160px]"
+                              >
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="light-wood">
+                                  Light Wood
+                                </SelectItem>
+                                <SelectItem value="medium-wood">
+                                  Medium Wood
+                                </SelectItem>
+                                <SelectItem value="dark-wood">
+                                  Dark Wood
+                                </SelectItem>
+                                <SelectItem value="plain">Plain</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
                         </div>
                       </div>
                     </TabsContent>
@@ -1561,7 +1596,18 @@ function App() {
           </ResizablePanel>
           <ResizableHandle withHandle />
           <ResizablePanel defaultSize="8%" minSize="6%" maxSize="50%">
-            <div className="h-full px-8 bg-gray-50 overflow-hidden">
+            <div
+              className={`h-full px-8 overflow-hidden ${previewBackground === "plain" ? "bg-gray-50" : ""}`}
+              style={
+                previewBackground !== "plain"
+                  ? {
+                      backgroundImage: `url(/${previewBackground}.jpg)`,
+                      backgroundRepeat: "repeat",
+                      backgroundPosition: "right",
+                    }
+                  : undefined
+              }
+            >
               {bandMode === "krokbragd" ? (
                 <KrokbragdPattern
                   bandConfig={rows}
