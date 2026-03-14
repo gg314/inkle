@@ -48,8 +48,13 @@ export function useHistory(
     setRepeaters(next.repeaters);
   }, [rows, repeaters, setRows, setRepeaters]);
 
+  const clearHistory = useCallback(() => {
+    undoStack.current = [];
+    redoStack.current = [];
+  }, []);
+
   const canUndo = undoStack.current.length > 0;
   const canRedo = redoStack.current.length > 0;
 
-  return { saveSnapshot, undo, redo, canUndo, canRedo };
+  return { saveSnapshot, undo, redo, canUndo, canRedo, clearHistory };
 }

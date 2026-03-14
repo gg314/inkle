@@ -10,16 +10,17 @@ import {
   Cross2Icon,
   DownloadIcon,
   EyeOpenIcon,
+  FilePlusIcon,
   FileTextIcon,
   GearIcon,
   GitHubLogoIcon,
+  GridIcon,
   HeartIcon,
   MagicWandIcon,
   MinusIcon,
   Pencil2Icon,
   PlusIcon,
   QuestionMarkCircledIcon,
-  ResetIcon,
   UploadIcon,
 } from "@radix-ui/react-icons";
 import { Eraser, Paintbrush, Pipette, Redo2, Undo2 } from "lucide-react";
@@ -160,12 +161,11 @@ function App() {
   const [repeaters, setRepeaters] = useState<Repeater[]>(
     defaultPreset.repeaters,
   );
-  const { saveSnapshot, undo, redo, canUndo, canRedo } = useHistory(
-    rows,
-    repeaters,
-    setRows,
-    setRepeaters,
+  const [pendingPreset, setPendingPreset] = useState<PresetPattern | null>(
+    null,
   );
+  const { saveSnapshot, undo, redo, canUndo, canRedo, clearHistory } =
+    useHistory(rows, repeaters, setRows, setRepeaters);
   // Update document title when pattern title changes
   useEffect(() => {
     if (patternTitle.trim()) {
@@ -308,12 +308,20 @@ function App() {
     setRows(updatedRows);
   };
 
-  const setPreset = (preset: PresetPattern) => {
-    saveSnapshot();
+  const applyPreset = (preset: PresetPattern) => {
+    clearHistory();
     setBandMode(preset.mode ?? "basic");
     setRows(preset.band);
     setRepeaters(preset.repeaters);
     toast.success(`Loaded preset "${preset.name}"`);
+  };
+
+  const setPreset = (preset: PresetPattern) => {
+    if (canUndo) {
+      setPendingPreset(preset);
+    } else {
+      applyPreset(preset);
+    }
   };
 
   const requestModeChange = (mode: BandMode) => {
@@ -323,7 +331,7 @@ function App() {
 
   const confirmModeChange = () => {
     if (!pendingMode) return;
-    saveSnapshot();
+    clearHistory();
     setBandMode(pendingMode);
     setRows(getDefaultRows(pendingMode));
     setRepeaters([]);
@@ -332,7 +340,7 @@ function App() {
   };
 
   const confirmClearPattern = () => {
-    saveSnapshot();
+    clearHistory();
     setRows(getDefaultRows(bandMode));
     setRepeaters([]);
     setUseMirror(false);
@@ -374,6 +382,7 @@ function App() {
         patternTitle,
         creatorName,
         footerLabel: bandMode === "krokbragd" ? "Krokbragd" : "Basic",
+        mode: bandMode,
       });
       toast.success("PDF exported");
     } catch (error) {
@@ -398,7 +407,7 @@ function App() {
         }
 
         // Restore all settings
-        saveSnapshot();
+        clearHistory();
         if (patternData.mode) setBandMode(patternData.mode);
         if (patternData.title) setPatternTitle(patternData.title);
         if (patternData.creator) setCreatorName(patternData.creator);
@@ -697,31 +706,20 @@ function App() {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost">
-                  Manage Project
+                  File
                   <ChevronDownIcon className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuItem onClick={savePattern}>
-                  <DownloadIcon className="h-4 w-4" />
-                  Save Pattern...
+                <DropdownMenuLabel>New</DropdownMenuLabel>
+                <DropdownMenuItem onClick={() => setClearDialogOpen(true)}>
+                  <FilePlusIcon className="h-4 w-4" />
+                  New Blank Pattern
                 </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={exportPatternPdf}
-                  disabled={bandMode === "krokbragd"}
-                >
-                  <FileTextIcon className="h-4 w-4" />
-                  Export PDF...
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => fileInputRef.current?.click()}>
-                  <UploadIcon className="h-4 w-4" />
-                  Load Pattern...
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
                 <DropdownMenuSub>
                   <DropdownMenuSubTrigger>
-                    <CopyIcon className="h-4 w-4" />
-                    Load Preset
+                    <GridIcon className="h-4 w-4" />
+                    New from Template
                   </DropdownMenuSubTrigger>
                   <DropdownMenuSubContent className="w-auto whitespace-nowrap">
                     {presetPatterns.map((preset, idx) => (
@@ -744,9 +742,18 @@ function App() {
                   </DropdownMenuSubContent>
                 </DropdownMenuSub>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => setClearDialogOpen(true)}>
-                  <ResetIcon className="h-4 w-4" />
-                  Clear Pattern
+                <DropdownMenuLabel>File</DropdownMenuLabel>
+                <DropdownMenuItem onClick={savePattern}>
+                  <DownloadIcon className="h-4 w-4" />
+                  Save Pattern...
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => fileInputRef.current?.click()}>
+                  <UploadIcon className="h-4 w-4" />
+                  Open Pattern...
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={exportPatternPdf}>
+                  <FileTextIcon className="h-4 w-4" />
+                  Export PDF...
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -758,32 +765,6 @@ function App() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-64">
-                <DropdownMenuItem
-                  onSelect={() =>
-                    window.open(
-                      "https://github.com/gg314/inkle",
-                      "_blank",
-                      "noopener,noreferrer",
-                    )
-                  }
-                >
-                  <GitHubLogoIcon className="h-4 w-4" />
-                  Source Code
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onSelect={() =>
-                    window.open(
-                      "https://github.com/sponsors/gg314?frequency=one-time",
-                      "_blank",
-                      "noopener,noreferrer",
-                    )
-                  }
-                >
-                  <HeartIcon className="h-4 w-4" />
-                  Support
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuLabel>Downloads</DropdownMenuLabel>
                 <DropdownMenuItem
                   onSelect={() =>
                     window.open(
@@ -807,6 +788,40 @@ function App() {
                 >
                   <FileTextIcon className="h-4 w-4" />
                   Blank Pattern Template (PDF)
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost">
+                  About
+                  <ChevronDownIcon className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuItem
+                  onSelect={() =>
+                    window.open(
+                      "https://github.com/gg314/inkle",
+                      "_blank",
+                      "noopener,noreferrer",
+                    )
+                  }
+                >
+                  <GitHubLogoIcon className="h-4 w-4" />
+                  Source Code
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onSelect={() =>
+                    window.open(
+                      "https://github.com/sponsors/gg314?frequency=one-time",
+                      "_blank",
+                      "noopener,noreferrer",
+                    )
+                  }
+                >
+                  <HeartIcon className="h-4 w-4" />
+                  Support
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -1053,10 +1068,9 @@ function App() {
                                       Saving and loading
                                     </p>
                                     <p className="text-muted-foreground">
-                                      Use <strong>Manage Project</strong> in the
-                                      top bar to save your design as a file,
-                                      load a saved file, or start from a preset
-                                      template.
+                                      Use the <strong>File</strong> menu to save
+                                      your design, open a saved file, or start
+                                      from a template.
                                     </p>
                                   </div>
                                 </div>
@@ -1079,9 +1093,15 @@ function App() {
                                         </span>
                                       </TooltipTrigger>
                                       <TooltipContent>
-                                        {row.label === "H" || row.label === "H1"
-                                          ? "Heddled"
-                                          : "Unheddled"}
+                                        {bandMode === "krokbragd"
+                                          ? row.label === "H1"
+                                            ? "Unheddled (1)"
+                                            : row.label === "U2"
+                                              ? "Heddled (2)"
+                                              : "Heddled (3)"
+                                          : row.label === "H"
+                                            ? "Heddled"
+                                            : "Unheddled"}
                                       </TooltipContent>
                                     </Tooltip>
                                   </TooltipProvider>
@@ -1202,40 +1222,43 @@ function App() {
                               <MinusIcon className="h-4 w-4" /> Remove warp
                             </Button>
                           </div>
-                          <div className="flex items-center space-x-2">
-                            <Button
-                              variant="outline"
-                              disabled={!useMirror || bandMode === "krokbragd"}
-                              onClick={addMirroredData}
-                            >
-                              <CopyIcon className="h-4 w-4" />
-                              Expand mirrored pattern
-                            </Button>
-                          </div>
+                          {bandMode !== "krokbragd" && (
+                            <div className="flex items-center space-x-2">
+                              <Button
+                                variant="outline"
+                                disabled={!useMirror}
+                                onClick={addMirroredData}
+                              >
+                                <CopyIcon className="h-4 w-4" />
+                                Expand mirrored pattern
+                              </Button>
+                            </div>
+                          )}
                         </div>
 
-                        <h4 className="scroll-m-20 text-xl font-semibold tracking-tight mb-4">
-                          Options
-                        </h4>
+                        {bandMode !== "krokbragd" && (
+                          <>
+                            <h4 className="scroll-m-20 text-xl font-semibold tracking-tight mb-4">
+                              Options
+                            </h4>
 
-                        <div className="flex items-start gap-3">
-                          <Checkbox
-                            id="use-mirror"
-                            checked={useMirror}
-                            disabled={bandMode === "krokbragd"}
-                            onClick={() => setUseMirror(!useMirror)}
-                          />
-                          <div className="grid gap-2">
-                            <Label htmlFor="use-mirror">
-                              Mirror pattern horizontally
-                            </Label>
-                            <p className="text-muted-foreground text-sm">
-                              {bandMode === "krokbragd"
-                                ? "Not available in Krokbragd mode"
-                                : 'Tip: start and finish in the "H" row'}
-                            </p>
-                          </div>
-                        </div>
+                            <div className="flex items-start gap-3">
+                              <Checkbox
+                                id="use-mirror"
+                                checked={useMirror}
+                                onClick={() => setUseMirror(!useMirror)}
+                              />
+                              <div className="grid gap-2">
+                                <Label htmlFor="use-mirror">
+                                  Mirror pattern horizontally
+                                </Label>
+                                <p className="text-muted-foreground text-sm">
+                                  {'Tip: start and finish in the "H" row'}
+                                </p>
+                              </div>
+                            </div>
+                          </>
+                        )}
 
                         <h4 className="scroll-m-20 text-xl font-semibold tracking-tight mb-4 mt-8">
                           Repeaters
@@ -1429,9 +1452,6 @@ function App() {
                                 </SelectItem>
                               </SelectContent>
                             </Select>
-                            <p className="text-muted-foreground text-sm">
-                              Changing mode will reset your current pattern.
-                            </p>
                           </div>
                         </div>
 
@@ -1552,6 +1572,33 @@ function App() {
               className="bg-red-600 hover:bg-red-700"
             >
               Change Mode
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      <AlertDialog
+        open={pendingPreset !== null}
+        onOpenChange={(open) => {
+          if (!open) setPendingPreset(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Load Preset?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Loading &ldquo;{pendingPreset?.name}&rdquo; will replace your
+              current pattern. Your undo history will be lost.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (pendingPreset) applyPreset(pendingPreset);
+                setPendingPreset(null);
+              }}
+            >
+              Load Preset
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

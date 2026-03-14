@@ -1,6 +1,7 @@
 import jsPDF from "jspdf";
+import { getKrokbragdOwner } from "@/lib/defaults";
 import { mirrorData, repeat } from "@/lib/inkle";
-import type { PatternRow, Repeater } from "@/types/inkle";
+import type { BandMode, PatternRow, Repeater } from "@/types/inkle";
 
 interface PdfExportOptions {
   rows: PatternRow[];
@@ -9,6 +10,7 @@ interface PdfExportOptions {
   patternTitle: string;
   creatorName: string;
   footerLabel: string;
+  mode: BandMode;
 }
 
 // US Letter landscape in inches
@@ -19,17 +21,17 @@ const MARGIN_Y = 0.4;
 const MARGIN_BOTTOM = 0.25;
 const CONTENT_W = PAGE_W - 2 * MARGIN_X;
 
-// Font loading
-let fontLoaded = false;
+// Cache the font data across calls, but always register it on each new doc
+let fontBase64: string | null = null;
 
 async function loadBahnschrift(doc: jsPDF) {
-  if (fontLoaded) return;
-  const resp = await fetch("/fonts/bahnschrift.ttf");
-  const buf = await resp.arrayBuffer();
-  const base64 = arrayBufferToBase64(buf);
-  doc.addFileToVFS("bahnschrift.ttf", base64);
+  if (!fontBase64) {
+    const resp = await fetch("/fonts/bahnschrift.ttf");
+    const buf = await resp.arrayBuffer();
+    fontBase64 = arrayBufferToBase64(buf);
+  }
+  doc.addFileToVFS("bahnschrift.ttf", fontBase64);
   doc.addFont("bahnschrift.ttf", "Bahnschrift", "normal");
-  fontLoaded = true;
 }
 
 function arrayBufferToBase64(buffer: ArrayBuffer): string {
@@ -107,57 +109,187 @@ function drawHeader(
   return labelY + 0.325;
 }
 
-function drawDraftRows(doc: jsPDF, data: PatternRow[], y: number): number {
+const FIRST_LINE_COLS = 53;
+const CONT_LINE_COLS = 51;
+
+function drawDraftRows(
+  doc: jsPDF,
+  data: PatternRow[],
+  y: number,
+  repeaterGroups: Repeater[][],
+  mode: BandMode,
+): number {
   const numCols = data[0].colors.length;
-  // Scale cell size to fit the page width, with some room for the label
   const labelWidth = 0.15;
+  const contLabelWidth = 0.365; // extra indent for "→ cont." label
   const availableWidth = CONTENT_W - labelWidth;
-  const cellSize = Math.min(0.185, availableWidth / numCols);
+  const cellSize = Math.min(
+    0.185,
+    availableWidth / Math.min(numCols, FIRST_LINE_COLS),
+  );
 
-  const startX = MARGIN_X + labelWidth;
-
-  doc.setFontSize(8);
-  doc.setTextColor(0);
-
-  // First pass: draw all grey cells
-  for (let rowIdx = 0; rowIdx < data.length; rowIdx++) {
-    const rowY = y + rowIdx * cellSize;
-    for (let colIdx = 0; colIdx < data[rowIdx].colors.length; colIdx++) {
-      if ((rowIdx + colIdx) % 2 === 1) {
-        doc.setFillColor(228, 231, 232);
-        doc.rect(startX + colIdx * cellSize, rowY, cellSize, cellSize, "F");
-      }
+  // Build line segments: first line up to 52 cols, then 46 each
+  const lines: { colStart: number; colEnd: number; isCont: boolean }[] = [];
+  if (numCols <= FIRST_LINE_COLS) {
+    lines.push({ colStart: 0, colEnd: numCols, isCont: false });
+  } else {
+    lines.push({ colStart: 0, colEnd: FIRST_LINE_COLS, isCont: false });
+    let col = FIRST_LINE_COLS;
+    while (col < numCols) {
+      const end = Math.min(col + CONT_LINE_COLS, numCols);
+      lines.push({ colStart: col, colEnd: end, isCont: true });
+      col = end;
     }
   }
 
-  // Second pass: draw all active cells on top
-  for (let rowIdx = 0; rowIdx < data.length; rowIdx++) {
-    const row = data[rowIdx];
-    const rowY = y + rowIdx * cellSize;
+  const numRows = data.length;
+  const lineSpacing = 0.08; // gap between wrapped line groups
+  const contGap = 0.18; // extra gap for continuation arrow
+  let curY = y;
 
-    // Row label (H or U)
-    doc.setFont("Bahnschrift", "normal");
-    doc.text(row.label, MARGIN_X, rowY + cellSize * 0.75);
+  for (const line of lines) {
+    const startX = MARGIN_X + labelWidth + (line.isCont ? contLabelWidth : 0);
 
-    for (let colIdx = 0; colIdx < row.colors.length; colIdx++) {
-      if ((rowIdx + colIdx) % 2 === 1) continue;
+    // Draw L-shaped arrow and "cont." before continuation lines
+    if (line.isCont) {
+      const centerX = MARGIN_X + labelWidth + contLabelWidth / 2;
+      const shiftDown = cellSize * 0.5;
 
-      const color = row.colors[colIdx];
-      const cellX = startX + colIdx * cellSize;
+      // Arrow bounding box: 0.2" wide, centered on centerX
+      const arrowW = 0.13;
+      const arrowLeftX = centerX - arrowW / 2;
+      const arrowRightX = centerX + arrowW / 2;
 
-      doc.setDrawColor(40, 37, 39);
-      doc.setLineWidth(0.009);
-      if (color) {
-        const [r, g, b] = hexToRgb(color.hex);
-        doc.setFillColor(r, g, b);
-      } else {
-        doc.setFillColor(255, 255, 255);
-      }
-      doc.rect(cellX, rowY, cellSize, cellSize, "FD");
+      const arrowMidY = curY + cellSize * 0.35 + shiftDown;
+      const arrowTopY = arrowMidY - cellSize * 0.4;
+
+      doc.setDrawColor(120);
+      doc.setLineWidth(0.01);
+      doc.line(arrowLeftX, arrowTopY, arrowLeftX, arrowMidY);
+      doc.line(arrowLeftX, arrowMidY, arrowRightX, arrowMidY);
+      const ah = 0.035;
+      doc.line(arrowRightX - ah, arrowMidY - ah, arrowRightX, arrowMidY);
+      doc.line(arrowRightX - ah, arrowMidY + ah, arrowRightX, arrowMidY);
+
+      // "cont." centered below the arrow
+      doc.setFont("Bahnschrift", "normal");
+      doc.setFontSize(6.5);
+      doc.setTextColor(120);
+      doc.text("cont.", centerX, arrowMidY + 0.13, { align: "center" });
     }
+
+    const isKrokbragd = mode === "krokbragd";
+    const totalCols = data[0].colors.length;
+
+    // First pass: draw all grey (disabled) cells
+    for (let rowIdx = 0; rowIdx < numRows; rowIdx++) {
+      const rowY = curY + rowIdx * cellSize;
+      for (let colIdx = line.colStart; colIdx < line.colEnd; colIdx++) {
+        const disabled = isKrokbragd
+          ? getKrokbragdOwner(colIdx, totalCols) !== rowIdx
+          : (rowIdx + colIdx) % 2 === 1;
+        if (disabled) {
+          doc.setFillColor(228, 231, 232);
+          doc.rect(
+            startX + (colIdx - line.colStart) * cellSize,
+            rowY,
+            cellSize,
+            cellSize,
+            "F",
+          );
+        }
+      }
+    }
+
+    // Second pass: draw active cells and labels
+    for (let rowIdx = 0; rowIdx < numRows; rowIdx++) {
+      const row = data[rowIdx];
+      const rowY = curY + rowIdx * cellSize;
+
+      // Row label (only on first line)
+      if (!line.isCont) {
+        doc.setFont("Bahnschrift", "normal");
+        doc.setFontSize(8);
+        doc.setTextColor(0);
+        doc.text(row.label, MARGIN_X, rowY + cellSize * 0.75);
+      }
+
+      for (let colIdx = line.colStart; colIdx < line.colEnd; colIdx++) {
+        const disabled = isKrokbragd
+          ? getKrokbragdOwner(colIdx, totalCols) !== rowIdx
+          : (rowIdx + colIdx) % 2 === 1;
+        if (disabled) continue;
+
+        const color = row.colors[colIdx];
+        const cellX = startX + (colIdx - line.colStart) * cellSize;
+
+        doc.setDrawColor(40, 37, 39);
+        doc.setLineWidth(0.009);
+        if (color) {
+          const [r, g, b] = hexToRgb(color.hex);
+          doc.setFillColor(r, g, b);
+        } else {
+          doc.setFillColor(255, 255, 255);
+        }
+        doc.rect(cellX, rowY, cellSize, cellSize, "FD");
+      }
+    }
+
+    // Draw repeater brackets below the cells for this line
+    const bracketTopY = curY + numRows * cellSize + 0.06;
+    const bracketH = 0.1;
+    for (let gi = 0; gi < repeaterGroups.length; gi++) {
+      const groupOffsetY = gi * (bracketH + 0.12);
+      for (const repeater of repeaterGroups[gi]) {
+        // Clamp repeater range to this line's visible columns
+        const rStart = Math.max(repeater.start, line.colStart);
+        const rEnd = Math.min(repeater.end, line.colEnd);
+        if (rStart >= rEnd) continue;
+
+        const leftX = startX + (rStart - line.colStart) * cellSize;
+        const rightX = startX + (rEnd - line.colStart) * cellSize;
+        const topY = bracketTopY + groupOffsetY;
+        const botY = topY + bracketH;
+
+        const isRealStart = rStart === repeater.start;
+        const isRealEnd = rEnd === repeater.end;
+
+        doc.setDrawColor(60);
+        doc.setLineWidth(0.008);
+        // U-shaped bracket: only draw tick marks at real endpoints
+        if (isRealStart) doc.line(leftX, topY, leftX, botY);
+        doc.line(leftX, botY, rightX, botY);
+        if (isRealEnd) doc.line(rightX, topY, rightX, botY);
+
+        // "×N" label centered — only on the segment with the real end
+        if (isRealEnd) {
+          doc.setFont("Bahnschrift", "normal");
+          doc.setFontSize(7);
+          doc.setTextColor(100);
+          doc.text(
+            `\u00d7${repeater.count}`,
+            (leftX + rightX) / 2,
+            topY + bracketH * 0.65,
+            { align: "center" },
+          );
+        }
+      }
+    }
+
+    // Calculate bracket space used
+    const bracketSpace =
+      repeaterGroups.length > 0
+        ? repeaterGroups.length * (bracketH + 0.12) + 0.02
+        : 0;
+
+    curY +=
+      numRows * cellSize +
+      bracketSpace +
+      lineSpacing +
+      (lines.length > 1 ? contGap : 0);
   }
 
-  return y + data.length * cellSize + 0.55;
+  return curY + 0.4;
 }
 
 function drawHexPattern(doc: jsPDF, data: PatternRow[], startY: number) {
@@ -166,8 +298,9 @@ function drawHexPattern(doc: jsPDF, data: PatternRow[], startY: number) {
   // Hex dimensions in inches — scale to fit page width
   const labelWidth = 0.3;
   const availableWidth = CONTENT_W - labelWidth;
-  const hexW = Math.min(0.12, availableWidth / (numCols / 2 + 0.5)) * 0.7;
-  const hexH = 2.5 * hexW;
+  const baseHexW = Math.min(0.12, availableWidth / (numCols / 2 + 0.5)) * 0.7;
+  const hexW = baseHexW * 0.85;
+  const hexH = 2.5 * baseHexW;
 
   const startX = MARGIN_X + labelWidth + 0.7;
 
@@ -182,43 +315,159 @@ function drawHexPattern(doc: jsPDF, data: PatternRow[], startY: number) {
     for (let rowIdx = 0; rowIdx < data.length; rowIdx++) {
       const row = data[rowIdx];
       for (let colIdx = 0; colIdx < row.colors.length; colIdx++) {
-        const color = row.colors[colIdx];
-        if (!color) continue;
+        // Skip cells not owned by this row
+        if ((rowIdx + colIdx) % 2 === 1) continue;
 
+        const color = row.colors[colIdx];
         const cx = startX + (colIdx / 2) * hexW;
         const cy = startY + repOffsetY + (rowIdx * hexH * 3) / 4;
 
         // Skip if off page
         if (cy + hexH > PAGE_H - MARGIN_BOTTOM - 0.3) continue;
 
-        const points = [
-          [cx + hexW / 2, cy],
-          [cx + hexW, cy + hexH / 4],
-          [cx + hexW, cy + (3 * hexH) / 4],
-          [cx + hexW / 2, cy + hexH],
-          [cx, cy + (3 * hexH) / 4],
-          [cx, cy + hexH / 4],
-        ];
-
-        const [r, g, b] = hexToRgb(color.hex);
-        doc.setFillColor(r, g, b);
-        doc.setDrawColor(
-          Math.max(0, r - 30),
-          Math.max(0, g - 30),
-          Math.max(0, b - 30),
-        );
-        doc.setLineWidth(0.004);
-
-        // Draw hexagon polygon
-        doc.moveTo(points[0][0], points[0][1]);
-        for (let i = 1; i < points.length; i++) {
-          doc.lineTo(points[i][0], points[i][1]);
-        }
-        doc.close();
-        doc.fillStroke();
+        drawHexCell(doc, cx, cy, hexW, hexH, color?.hex ?? null);
       }
     }
   }
+}
+
+// Krokbragd weave row alternation: 1-2-1-3 cycle
+// Maps visual row index to data row index (0=H1, 1=U2, 2=U3)
+function getWeaveRow(visualRow: number): number {
+  const cycle = visualRow % 4;
+  if (cycle === 0 || cycle === 2) return 0; // H1
+  if (cycle === 1) return 1; // U2
+  return 2; // U3
+}
+
+const WEAVE_ROWS_PER_TILE = 4; // one full 1-2-1-3 cycle
+
+function drawKrokbragdHexPattern(
+  doc: jsPDF,
+  data: PatternRow[],
+  startY: number,
+) {
+  const totalCols = data[0].colors.length;
+
+  // Hex dimensions in inches — scale to fit page width, 30% skinnier than basic
+  const labelWidth = 0.3;
+  const availableWidth = CONTENT_W - labelWidth;
+  const baseHexW = Math.min(0.12, availableWidth / (totalCols / 2 + 0.5)) * 0.7;
+  const hexW = baseHexW * 0.85;
+  const hexH = 2.5 * baseHexW;
+
+  const startX = MARGIN_X + labelWidth + 0.7;
+
+  // Precompute cumulative H1 cell count before each column index
+  const h1Before: number[] = new Array(totalCols);
+  let h1Count = 0;
+  for (let i = 0; i < totalCols; i++) {
+    h1Before[i] = h1Count;
+    if (getKrokbragdOwner(i, totalCols) === 0) h1Count++;
+  }
+
+  // Calculate how many tile repeats fit in the remaining page
+  const tileHeight = (WEAVE_ROWS_PER_TILE * hexH * 3) / 4;
+  const availableHeight = PAGE_H - MARGIN_BOTTOM - startY - 0.3;
+  const repeatCount = Math.max(1, Math.floor(availableHeight / tileHeight) - 1);
+
+  // Treadling sequence: 1-2-1-3 mapped to display labels
+  const treadlingLabels = [1, 2, 1, 3];
+
+  for (let rep = 0; rep < repeatCount; rep++) {
+    const repOffsetY = rep * tileHeight;
+
+    for (let vRow = 0; vRow < WEAVE_ROWS_PER_TILE; vRow++) {
+      const dataRowIdx = getWeaveRow(vRow);
+      const row = data[dataRowIdx];
+
+      const rowCy = startY + repOffsetY + (vRow * hexH * 3) / 4;
+
+      // Skip if off page
+      if (rowCy + hexH > PAGE_H - MARGIN_BOTTOM - 0.3) continue;
+
+      // Treadling number to the left
+      doc.setFont("Bahnschrift", "normal");
+      doc.setFontSize(7);
+      doc.setTextColor(120);
+      doc.text(
+        String(treadlingLabels[vRow]),
+        startX - 0.15,
+        rowCy + hexH * 0.7,
+        { align: "center" },
+      );
+
+      for (let colIdx = 0; colIdx < row.colors.length; colIdx++) {
+        // Skip cells not owned by this row
+        const owner = getKrokbragdOwner(colIdx, totalCols);
+        if (owner !== dataRowIdx) {
+          // Exception: U3 border positions get filled with U2 colors
+          if (dataRowIdx === 2) {
+            const isLeftBorder = colIdx === 1 || colIdx === 3;
+            const isRightBorder =
+              colIdx === totalCols - 4 || colIdx === totalCols - 2;
+            if (!(isLeftBorder || isRightBorder)) continue;
+          } else {
+            continue;
+          }
+        }
+
+        // For U3 border positions, use U2 colors
+        let color = row.colors[colIdx];
+        if (dataRowIdx === 2 && color === null) {
+          const isLeftBorder = colIdx === 1 || colIdx === 3;
+          const isRightBorder =
+            colIdx === totalCols - 4 || colIdx === totalCols - 2;
+          if (isLeftBorder || isRightBorder) {
+            color = data[1].colors[colIdx];
+          }
+        }
+
+        const n = h1Before[colIdx];
+        const cx = startX + (vRow % 2 === 1 ? n * hexW - hexW / 2 : n * hexW);
+        const cy = rowCy;
+
+        // Skip if off page
+        if (cy + hexH > PAGE_H - MARGIN_BOTTOM - 0.3) continue;
+
+        drawHexCell(doc, cx, cy, hexW, hexH, color?.hex ?? null);
+      }
+    }
+  }
+}
+
+function drawHexCell(
+  doc: jsPDF,
+  cx: number,
+  cy: number,
+  hexW: number,
+  hexH: number,
+  hex: string | null,
+) {
+  const points = [
+    [cx + hexW / 2, cy],
+    [cx + hexW, cy + hexH / 4],
+    [cx + hexW, cy + (3 * hexH) / 4],
+    [cx + hexW / 2, cy + hexH],
+    [cx, cy + (3 * hexH) / 4],
+    [cx, cy + hexH / 4],
+  ];
+
+  const [r, g, b] = hex ? hexToRgb(hex) : [255, 255, 255];
+  doc.setFillColor(r, g, b);
+  doc.setDrawColor(
+    Math.min(102, Math.max(0, r - 60)),
+    Math.min(102, Math.max(0, g - 60)),
+    Math.min(102, Math.max(0, b - 60)),
+  );
+  doc.setLineWidth(0.004);
+
+  doc.moveTo(points[0][0], points[0][1]);
+  for (let i = 1; i < points.length; i++) {
+    doc.lineTo(points[i][0], points[i][1]);
+  }
+  doc.close();
+  doc.fillStroke();
 }
 
 function drawFooter(doc: jsPDF, footerLabel: string) {
@@ -243,6 +492,7 @@ export async function exportPdf(options: PdfExportOptions) {
     patternTitle,
     creatorName,
     footerLabel,
+    mode,
   } = options;
   const data = prepareData(rows, repeaterGroups, useMirror);
 
@@ -260,11 +510,15 @@ export async function exportPdf(options: PdfExportOptions) {
   // Header with TITLE / CREATOR / DATE fields
   y = drawHeader(doc, y, patternTitle, creatorName);
 
-  // H/U draft rows
-  y = drawDraftRows(doc, data, y);
+  // H/U draft rows (unexpanded, with repeater brackets)
+  y = drawDraftRows(doc, rows, y, repeaterGroups, mode);
 
   // Hexagon pattern
-  drawHexPattern(doc, data, y);
+  if (mode === "krokbragd") {
+    drawKrokbragdHexPattern(doc, data, y);
+  } else {
+    drawHexPattern(doc, data, y);
+  }
 
   // Footer
   drawFooter(doc, footerLabel);
