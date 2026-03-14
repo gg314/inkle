@@ -55,28 +55,42 @@ const KrokbragdPattern: React.FC<KrokbragdPatternProps> = ({
   );
 
   const hexPerRow = data[0].colors.length;
+  const totalCols = hexPerRow;
   const tileHeight = (WEAVE_ROWS_PER_TILE * H * 3) / 4;
 
-  const bandWidth = ((hexPerRow + 8) / 2) * W;
+  // Count H1 cells to determine actual content width
+  const h1Count = useMemo(() => {
+    let count = 0;
+    for (let i = 0; i < totalCols; i++) {
+      if (getKrokbragdOwner(i, totalCols) === 0) count++;
+    }
+    return count;
+  }, [totalCols]);
+
+  // Content bounds: odd rows shift left by W/2, even rows span 0..h1Count*W
+  const contentLeft = -W / 2;
+  const contentRight = h1Count * W;
+  const padding = 4 * W;
+  const bandWidth = contentRight - contentLeft + padding;
+  const vbX = contentLeft - padding / 2;
+
   const scale = bandWidth / containerSize.width;
   const visibleHeight = containerSize.height * scale;
   const repeatCount = Math.min(Math.ceil(visibleHeight / tileHeight) + 2, 150);
 
-  const vbX = -2 * W;
   const vbY = (-2 + 2.5) * H;
 
   const tile = useMemo(() => {
     const cells: (React.ReactElement | null)[] = [];
-    const totalCols = data[0].colors.length;
 
     // Precompute cumulative H1 cell count before each column index.
     // H1 defines the even-row hex grid columns; odd-row hexagons
     // are positioned relative to them.
     const h1Before: number[] = new Array(totalCols);
-    let h1Count = 0;
+    let count = 0;
     for (let i = 0; i < totalCols; i++) {
-      h1Before[i] = h1Count;
-      if (getKrokbragdOwner(i, totalCols) === 0) h1Count++;
+      h1Before[i] = count;
+      if (getKrokbragdOwner(i, totalCols) === 0) count++;
     }
 
     for (let vRow = 0; vRow < WEAVE_ROWS_PER_TILE; vRow++) {
@@ -153,6 +167,13 @@ const KrokbragdPattern: React.FC<KrokbragdPatternProps> = ({
               dx="0"
               dy="0"
               stdDeviation="10"
+              floodColor="black"
+              floodOpacity="0.25"
+            />
+            <feDropShadow
+              dx="0"
+              dy="0"
+              stdDeviation="20"
               floodColor="black"
               floodOpacity="0.25"
             />
