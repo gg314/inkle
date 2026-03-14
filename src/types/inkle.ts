@@ -1,3 +1,5 @@
+export type BandMode = "basic" | "krokbragd";
+
 export type Color = {
   name: string;
   hex: string;
@@ -18,6 +20,7 @@ export type Repeater = {
 
 export type PresetPattern = {
   name: string;
+  mode?: BandMode;
   band: PatternRow[];
   repeaters: Repeater[];
 };
