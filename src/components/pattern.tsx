@@ -56,8 +56,11 @@ const Pattern: React.FC<PatternProps> = ({
   const hexPerRow = data[0].colors.length;
   const tileHeight = (data.length * H * 3) / 4;
 
-  // Band's natural width in SVG user units
-  const bandWidth = ((hexPerRow + 8) / 2) * W;
+  // Content bounds: hexes span from x=0 to ((hexPerRow+1)/2)*W
+  const contentRight = ((hexPerRow + 1) / 2) * W;
+  const padding = 4 * W;
+  const bandWidth = contentRight + padding;
+  const vbX = -padding / 2;
 
   // Scale: SVG units per pixel (band fills container width)
   const scale = bandWidth / containerSize.width;
@@ -68,7 +71,6 @@ const Pattern: React.FC<PatternProps> = ({
   // Enough tile repeats to fill the visible height, plus a buffer
   const repeatCount = Math.min(Math.ceil(visibleHeight / tileHeight) + 2, 150);
 
-  const vbX = -2 * W;
   const vbY = (-2 + 2.5) * H;
 
   const tile = useMemo(() => {
@@ -129,6 +131,13 @@ const Pattern: React.FC<PatternProps> = ({
               dx="0"
               dy="0"
               stdDeviation="10"
+              floodColor="black"
+              floodOpacity="0.25"
+            />
+            <feDropShadow
+              dx="0"
+              dy="0"
+              stdDeviation="20"
               floodColor="black"
               floodOpacity="0.25"
             />
