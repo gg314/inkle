@@ -1115,4 +1115,152 @@ export const presetPatterns: PresetPattern[] = [
       { start: 32, length: 3, count: 4 },
     ],
   },
+  {
+    name: "Show Your Stripes: 1960-",
+    band: [
+      {
+        label: "H",
+        colors: [
+          ALL_COLORS[29], // Aqua
+          null,
+          ALL_COLORS[31], // Delft
+          null,
+          ALL_COLORS[31],
+          null,
+          ALL_COLORS[31],
+          null,
+          ALL_COLORS[31],
+          null,
+          ALL_COLORS[31],
+          null,
+          ALL_COLORS[31],
+          null,
+          ALL_COLORS[31],
+          null,
+          ALL_COLORS[2], // Antique White
+          null,
+          ALL_COLORS[2],
+          null,
+          ALL_COLORS[1], // Cream
+          null,
+          ALL_COLORS[3], // Natural
+          null,
+          ALL_COLORS[2], // Antique White
+          null,
+          ALL_COLORS[18], // Light Peach
+          null,
+          ALL_COLORS[13], // Orchid Pink
+          null,
+          ALL_COLORS[1], // Cream
+          null,
+          ALL_COLORS[2], // Antique White
+          null,
+          ALL_COLORS[13], // Orchid Pink
+          null,
+          ALL_COLORS[14], // Copper Mist
+          null,
+          ALL_COLORS[39], // Soft Mauve
+          null,
+          ALL_COLORS[12], // Tomato
+          null,
+          ALL_COLORS[12],
+          null,
+          ALL_COLORS[11], // Bright Coral
+          null,
+          ALL_COLORS[12], // Tomato
+          null,
+          ALL_COLORS[11], // Bright Coral
+          null,
+          ALL_COLORS[12], // Tomato
+          null,
+          ALL_COLORS[11], // Bright Coral
+          null,
+          ALL_COLORS[8], // Burgundy
+          null,
+          ALL_COLORS[8],
+          null,
+          ALL_COLORS[8],
+          null,
+          ALL_COLORS[9], // Cardinal Red
+          null,
+          ALL_COLORS[8], // Burgundy
+          null,
+          ALL_COLORS[16], // Fudge Brown
+          null,
+        ],
+      },
+      {
+        label: "U",
+        colors: [
+          null,
+          ALL_COLORS[29], // Aqua
+          null,
+          ALL_COLORS[31], // Delft
+          null,
+          ALL_COLORS[31],
+          null,
+          ALL_COLORS[31],
+          null,
+          ALL_COLORS[31],
+          null,
+          ALL_COLORS[31],
+          null,
+          ALL_COLORS[31],
+          null,
+          ALL_COLORS[31],
+          null,
+          ALL_COLORS[2], // Antique White
+          null,
+          ALL_COLORS[2],
+          null,
+          ALL_COLORS[1], // Cream
+          null,
+          ALL_COLORS[3], // Natural
+          null,
+          ALL_COLORS[2], // Antique White
+          null,
+          ALL_COLORS[18], // Light Peach
+          null,
+          ALL_COLORS[13], // Orchid Pink
+          null,
+          ALL_COLORS[1], // Cream
+          null,
+          ALL_COLORS[2], // Antique White
+          null,
+          ALL_COLORS[13], // Orchid Pink
+          null,
+          ALL_COLORS[14], // Copper Mist
+          null,
+          ALL_COLORS[39], // Soft Mauve
+          null,
+          ALL_COLORS[12], // Tomato
+          null,
+          ALL_COLORS[12],
+          null,
+          ALL_COLORS[11], // Bright Coral
+          null,
+          ALL_COLORS[12], // Tomato
+          null,
+          ALL_COLORS[11], // Bright Coral
+          null,
+          ALL_COLORS[12], // Tomato
+          null,
+          ALL_COLORS[11], // Bright Coral
+          null,
+          ALL_COLORS[8], // Burgundy
+          null,
+          ALL_COLORS[8],
+          null,
+          ALL_COLORS[8],
+          null,
+          ALL_COLORS[9], // Cardinal Red
+          null,
+          ALL_COLORS[8], // Burgundy
+          null,
+          ALL_COLORS[16], // Fudge Brown
+        ],
+      },
+    ],
+    repeaters: [],
+  },
 ];
