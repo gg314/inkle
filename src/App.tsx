@@ -118,7 +118,7 @@ import {
   repeaterLength,
 } from "@/lib/inkle";
 import { exportPdf } from "@/lib/pdf-export";
-import {
+import type {
   BandMode,
   Color,
   PatternRow,
@@ -398,7 +398,7 @@ function App() {
       });
       toast.success("PDF exported");
     } catch (error) {
-      toast.error("Error exporting PDF: " + (error as Error).message);
+      toast.error(`Error exporting PDF: ${(error as Error).message}`);
     }
   };
 
@@ -432,7 +432,7 @@ function App() {
           setUseShadow(patternData.useShadow);
         toast.success(`Loaded "${patternData.title || file.name}"`);
       } catch (error) {
-        toast.error("Error loading pattern: " + (error as Error).message);
+        toast.error(`Error loading pattern: ${(error as Error).message}`);
       }
     };
     reader.readAsText(file);
@@ -1031,29 +1031,27 @@ function App() {
                                   <CommandList>
                                     <CommandEmpty>No results</CommandEmpty>
                                     <CommandGroup>
-                                      {colors.map((c, idx) => {
-                                        if (c.owned) {
-                                          return (
-                                            <CommandItem
-                                              key={idx}
-                                              value={c.name}
-                                              onSelect={() => {
-                                                setSelectedColor(c);
-                                                setActiveTool("paint");
-                                                setPaintPickerOpen(false);
+                                      {colors
+                                        .filter((c) => c.owned)
+                                        .map((c) => (
+                                          <CommandItem
+                                            key={c.name}
+                                            value={c.name}
+                                            onSelect={() => {
+                                              setSelectedColor(c);
+                                              setActiveTool("paint");
+                                              setPaintPickerOpen(false);
+                                            }}
+                                          >
+                                            <div
+                                              className="h-4 w-4 rounded-sm border border-gray-300"
+                                              style={{
+                                                backgroundColor: c.hex,
                                               }}
-                                            >
-                                              <div
-                                                className="h-4 w-4 rounded-sm border border-gray-300"
-                                                style={{
-                                                  backgroundColor: c.hex,
-                                                }}
-                                              />
-                                              <span>{c.name}</span>
-                                            </CommandItem>
-                                          );
-                                        }
-                                      })}
+                                            />
+                                            <span>{c.name}</span>
+                                          </CommandItem>
+                                        ))}
                                     </CommandGroup>
                                   </CommandList>
                                 </Command>
@@ -1218,7 +1216,8 @@ function App() {
                                         {color === null && isCellDisabled ? (
                                           BLANK_BUTTON
                                         ) : (
-                                          <div
+                                          <button
+                                            type="button"
                                             className="rounded-none border border-gray-700 w-8 h-8 p-0 flex-shrink-0 cursor-pointer"
                                             style={
                                               color?.hex
@@ -1429,7 +1428,7 @@ function App() {
                                           saveSnapshot();
                                           const newRepeaters = [...repeaters];
                                           newRepeaters[idx].start =
-                                            parseInt(e.target.value) || 0;
+                                            parseInt(e.target.value, 10) || 0;
                                           setRepeaters(newRepeaters);
                                         }}
                                         className="h-8 w-16"
@@ -1450,7 +1449,7 @@ function App() {
                                           saveSnapshot();
                                           const newRepeaters = [...repeaters];
                                           newRepeaters[idx].length =
-                                            parseInt(e.target.value) || 1;
+                                            parseInt(e.target.value, 10) || 1;
                                           setRepeaters(newRepeaters);
                                         }}
                                         className="h-8 w-16"
@@ -1470,7 +1469,7 @@ function App() {
                                           saveSnapshot();
                                           const newRepeaters = [...repeaters];
                                           newRepeaters[idx].count =
-                                            parseInt(e.target.value) || 1;
+                                            parseInt(e.target.value, 10) || 1;
                                           setRepeaters(newRepeaters);
                                         }}
                                         className="h-8 w-16"

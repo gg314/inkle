@@ -193,7 +193,7 @@ function PatternCard({
           >
             {Array.from({ length: reps }, (_, i) => (
               <use
-                key={i}
+                key={`rep-${i}`}
                 href={`#tile-${preset.name}`}
                 transform={`translate(0, ${i * tileHeight})`}
               />

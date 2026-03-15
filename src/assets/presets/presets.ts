@@ -1,4 +1,4 @@
-import { Color, PresetPattern } from "@/types/inkle";
+import type { Color, PresetPattern } from "@/types/inkle";
 
 export const ALL_COLORS: Color[] = [
   { name: "White", hex: "#FFFFFF", owned: true },

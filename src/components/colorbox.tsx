@@ -21,7 +21,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Color } from "@/types/inkle";
+import type { Color } from "@/types/inkle";
 
 type ColorBoxProps = {
   color: Color | null | "random";
@@ -56,9 +56,10 @@ const ColorBox = ({
         <TooltipTrigger className="p-0 h-8 border-0 flex-shrink-0">
           <Popover open={pickerOpen} onOpenChange={setPickerOpen}>
             <PopoverTrigger asChild>
-              <div
+              <button
+                type="button"
                 className="rounded-none border border-gray-700 w-8 h-8 p-0 flex-shrink-0"
-                role="combobox"
+                aria-expanded={pickerOpen}
                 style={
                   typeof color === "string"
                     ? {
@@ -73,7 +74,7 @@ const ColorBox = ({
                 {color === "random" && (
                   <QuestionMarkIcon className="h-8 p-0 m-0 mx-auto" />
                 )}
-              </div>
+              </button>
             </PopoverTrigger>
             <PopoverContent>
               <Command>
@@ -81,26 +82,24 @@ const ColorBox = ({
                 <CommandList>
                   <CommandEmpty>No results</CommandEmpty>
                   <CommandGroup>
-                    {colors.map((color, idx) => {
-                      if (color.owned) {
-                        return (
-                          <CommandItem
-                            key={idx}
-                            value={color.name}
-                            onSelect={() => {
-                              updateColorFn(rowIdx, colIdx, color);
-                              setPickerOpen(false);
-                            }}
-                          >
-                            <div
-                              className="h-4 w-4 rounded-sm border border-gray-300"
-                              style={{ backgroundColor: color.hex }}
-                            ></div>
-                            <span>{color.name}</span>
-                          </CommandItem>
-                        );
-                      }
-                    })}
+                    {colors
+                      .filter((c) => c.owned)
+                      .map((color) => (
+                        <CommandItem
+                          key={color.name}
+                          value={color.name}
+                          onSelect={() => {
+                            updateColorFn(rowIdx, colIdx, color);
+                            setPickerOpen(false);
+                          }}
+                        >
+                          <div
+                            className="h-4 w-4 rounded-sm border border-gray-300"
+                            style={{ backgroundColor: color.hex }}
+                          ></div>
+                          <span>{color.name}</span>
+                        </CommandItem>
+                      ))}
                   </CommandGroup>
                 </CommandList>
               </Command>
