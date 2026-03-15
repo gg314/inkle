@@ -5,6 +5,7 @@ import {
   BlendingModeIcon,
   BookmarkIcon,
   ChevronDownIcon,
+  ChevronRightIcon,
   ColorWheelIcon,
   CopyIcon,
   Cross2Icon,
@@ -104,6 +105,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { usePageMeta } from "@/hooks/useCanonical";
 import { useHistory } from "@/hooks/useHistory";
 import {
   getDefaultRows,
@@ -135,6 +137,11 @@ const BLANK_BUTTON = (
 );
 
 function App() {
+  usePageMeta({
+    title: "Inkle Loom Pattern Designer",
+    description:
+      "Free online inkle loom pattern generator. Design inkle band weaving patterns with custom colors, templates, and live preview. Beginner friendly — no experience needed.",
+  });
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [logoSrc] = useState(() => `/logo${Math.ceil(Math.random() * 6)}.png`);
   const [useMirror, setUseMirror] = useState(false);
@@ -470,6 +477,24 @@ function App() {
               back on a laptop or desktop to start designing.
             </span>
           </div>
+
+          <a
+            href="/patterns"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-between rounded-lg border bg-white p-4 mt-4 transition-shadow duration-200 hover:shadow-[0_0_8px_rgba(0,0,0,0.12)]"
+            style={{ color: "inherit", textDecoration: "none" }}
+          >
+            <div>
+              <div className="font-medium text-sm mb-1">
+                Browse Pattern Gallery
+              </div>
+              <div className="text-xs text-muted-foreground leading-relaxed">
+                Explore ready-made patterns for inspiration
+              </div>
+            </div>
+            <ChevronRightIcon className="h-5 w-5 text-muted-foreground flex-shrink-0 ml-3" />
+          </a>
         </div>
 
         {/* Features */}
@@ -854,6 +879,15 @@ function App() {
                 >
                   <RulerSquareIcon className="h-4 w-4" />
                   Build an Inkle Loom
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onSelect={() =>
+                    window.open("/patterns", "_blank", "noopener,noreferrer")
+                  }
+                >
+                  <GridIcon className="h-4 w-4" />
+                  Pattern Gallery
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
