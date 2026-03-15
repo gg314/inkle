@@ -19,7 +19,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { mirrorData } from "@/lib/inkle";
-import { Color, PatternRow, Repeater } from "@/types/inkle";
+import type { Color, PatternRow, Repeater } from "@/types/inkle";
 
 type RandomGeneratorProps = {
   colors: Color[];
@@ -67,7 +67,7 @@ const RandomGenerator = ({
     color: Color | "random" | null,
     palette: Color[] = [],
   ) {
-    if (color == "random") {
+    if (color === "random") {
       return palette[Math.floor(Math.random() * palette.length)];
     }
     return color;
@@ -185,7 +185,7 @@ const RandomGenerator = ({
                   placeholder="Number of colors"
                   value={numberOfColors}
                   onChange={(e) => {
-                    const value = parseInt(e.target.value);
+                    const value = parseInt(e.target.value, 10);
                     const boundedValue = Math.min(50, Math.max(1, value));
                     setNumberOfColors(boundedValue);
                   }}
@@ -222,7 +222,7 @@ const RandomGenerator = ({
             </div>
             <div>
               {outerBands.map((color, idx) => (
-                <div key={idx} className="inline-block mr-1.5">
+                <div key={`band-${idx}`} className="inline-block mr-1.5">
                   <ColorBox
                     colors={colors}
                     color={color}
@@ -248,7 +248,7 @@ const RandomGenerator = ({
                 placeholder="Number of warp threads"
                 value={numberOfWarpThreads}
                 onChange={(e) => {
-                  const value = parseInt(e.target.value);
+                  const value = parseInt(e.target.value, 10);
                   const boundedValue = Math.min(50, Math.max(1, value));
                   setnumberOfWarpThreads(boundedValue);
                 }}

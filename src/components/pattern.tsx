@@ -1,6 +1,7 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import type React from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { mirrorData, repeat } from "@/lib/inkle";
-import { PatternRow, Repeater } from "@/types/inkle";
+import type { PatternRow, Repeater } from "@/types/inkle";
 
 interface PatternProps {
   bandConfig: PatternRow[];
@@ -109,7 +110,7 @@ const Pattern: React.FC<PatternProps> = ({
   const tileInstances = useMemo(() => {
     return Array.from({ length: repeatCount }, (_, i) => (
       <use
-        key={i}
+        key={`tile-${i}`}
         href="#bandTile"
         transform={`translate(0, ${i * tileHeight})`}
       />

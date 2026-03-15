@@ -1,7 +1,8 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import type React from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { getKrokbragdOwner } from "@/lib/defaults";
 import { repeat } from "@/lib/inkle";
-import { PatternRow, Repeater } from "@/types/inkle";
+import type { PatternRow, Repeater } from "@/types/inkle";
 
 interface KrokbragdPatternProps {
   bandConfig: PatternRow[];
@@ -140,12 +141,12 @@ const KrokbragdPattern: React.FC<KrokbragdPatternProps> = ({
     }
 
     return cells;
-  }, [data, useShadow]);
+  }, [data, useShadow, totalCols]);
 
   const tileInstances = useMemo(() => {
     return Array.from({ length: repeatCount }, (_, i) => (
       <use
-        key={i}
+        key={`tile-${i}`}
         href="#krokbragdTile"
         transform={`translate(0, ${i * tileHeight})`}
       />

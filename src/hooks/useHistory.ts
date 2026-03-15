@@ -1,5 +1,5 @@
 import { useCallback, useRef } from "react";
-import { PatternRow, Repeater } from "@/types/inkle";
+import type { PatternRow, Repeater } from "@/types/inkle";
 
 type Snapshot = {
   rows: PatternRow[];

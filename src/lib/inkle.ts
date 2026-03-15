@@ -1,4 +1,4 @@
-import { Color, PatternRow, Repeater } from "@/types/inkle";
+import type { Color, PatternRow, Repeater } from "@/types/inkle";
 
 export const mirrorData = (bandConfig: PatternRow[]) => {
   // Add a reversed copy of all elements except the last to each row
@@ -247,7 +247,7 @@ export function groupNonOverlappingRepeaters(
   }
 
   // Iteratively attempt to move elements up into earlier groups
-  let changed;
+  let changed = false;
   do {
     changed = false;
     for (let i = groups.length - 1; i > 0; i--) {

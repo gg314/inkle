@@ -6,7 +6,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { PresetPattern } from "@/types/inkle";
+import type { PresetPattern } from "@/types/inkle";
 
 type PresetSelectorProps = {
   setPresetFn: (preset: PresetPattern) => void;
@@ -29,8 +29,8 @@ const PresetSelector = ({ setPresetFn }: PresetSelectorProps) => {
           <SelectValue placeholder="Load a preset pattern" />
         </SelectTrigger>
         <SelectContent>
-          {presetPatterns.map((preset, idx) => (
-            <SelectItem value={preset.name} key={idx}>
+          {presetPatterns.map((preset) => (
+            <SelectItem value={preset.name} key={preset.name}>
               {preset.name}
             </SelectItem>
           ))}
