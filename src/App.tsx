@@ -128,10 +128,10 @@ import type {
 
 const BLANK_BUTTON = (
   <div
-    className="rounded-none border-none opacity-30 h-8 w-8 p-0 inline-block flex-shrink-0"
+    className="rounded-none border-none opacity-30 h-7 w-7 p-0 inline-block flex-shrink-0"
     style={{
       background:
-        "repeating-linear-gradient(-45deg, rgba(0, 0, 0, .1), rgba(0, 0, 0, .1) 4px, rgba(0, 0, 0, .4) 4px, rgba(0, 0, 0, .4) 8px)",
+        "repeating-linear-gradient(-45deg, rgba(0, 0, 0, .1), rgba(0, 0, 0, .1) 3.3px, rgba(0, 0, 0, .4) 3.3px, rgba(0, 0, 0, .4) 6.6px)",
     }}
   ></div>
 );
@@ -142,6 +142,62 @@ function App() {
     description:
       "Free online inkle loom pattern generator. Design inkle band weaving patterns with custom colors, templates, and live preview. Beginner friendly — no experience needed.",
   });
+
+  useEffect(() => {
+    const script = document.createElement("script");
+    script.type = "application/ld+json";
+    script.id = "faq-structured-data";
+    script.textContent = JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      mainEntity: [
+        {
+          "@type": "Question",
+          name: "What is an inkle loom?",
+          acceptedAnswer: {
+            "@type": "Answer",
+            text: "An inkle loom is a simple frame loom used to weave narrow bands and straps. It's one of the easiest looms to learn on, making it popular with beginners. Inkle bands are woven by raising and lowering alternating warp threads to create colorful patterns.",
+          },
+        },
+        {
+          "@type": "Question",
+          name: "How do I design an inkle loom pattern?",
+          acceptedAnswer: {
+            "@type": "Answer",
+            text: "You can design inkle loom patterns using a warping draft — a grid that shows which color thread goes in each position. The Inkle Loom Pattern Designer lets you build drafts visually, assign colors, and preview how the finished band will look before you start warping your loom.",
+          },
+        },
+        {
+          "@type": "Question",
+          name: "Is the Inkle Loom Pattern Designer free?",
+          acceptedAnswer: {
+            "@type": "Answer",
+            text: "Yes, the Inkle Loom Pattern Designer is completely free to use. There are no accounts, subscriptions, or paywalls. You can save and load your patterns as files on your own computer.",
+          },
+        },
+        {
+          "@type": "Question",
+          name: "Do I need weaving experience to use this tool?",
+          acceptedAnswer: {
+            "@type": "Answer",
+            text: "No experience is needed. The designer is beginner friendly and includes a library of ready-made pattern templates you can start from. You can also generate random patterns to explore different designs.",
+          },
+        },
+        {
+          "@type": "Question",
+          name: "What is a warping draft?",
+          acceptedAnswer: {
+            "@type": "Answer",
+            text: "A warping draft is a chart that maps out the color and position of every warp thread on an inkle loom. Each row in the draft represents a pair of threads — one that goes over the top bar (heddled) and one that goes under (unheddled). The draft determines the pattern that appears in the finished woven band.",
+          },
+        },
+      ],
+    });
+    document.head.appendChild(script);
+    return () => {
+      script.remove();
+    };
+  }, []);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [logoSrc] = useState(() => `/logo${Math.ceil(Math.random() * 6)}.png`);
   const [useMirror, setUseMirror] = useState(false);
@@ -1181,12 +1237,12 @@ function App() {
                               {rows.map((row, rowIdx) => (
                                 <div
                                   key={rowIdx}
-                                  className="flex items-center h-8 flex-nowrap"
+                                  className="flex items-center h-7 flex-nowrap"
                                 >
                                   <TooltipProvider>
                                     <Tooltip>
                                       <TooltipTrigger asChild>
-                                        <span className="weight-light p-2 text-muted-foreground w-8 flex-shrink-0 cursor-default">
+                                        <span className="weight-light px-1 text-sm text-muted-foreground w-7 flex-shrink-0 cursor-default">
                                           {row.label}
                                         </span>
                                       </TooltipTrigger>
@@ -1218,19 +1274,20 @@ function App() {
                                         ) : (
                                           <button
                                             type="button"
-                                            className="rounded-none border border-gray-700 w-8 h-8 p-0 flex-shrink-0 cursor-pointer"
+                                            className="rounded-none border border-gray-700 w-7 h-7 p-0 flex-shrink-0 cursor-pointer"
                                             style={
                                               color?.hex
                                                 ? { backgroundColor: color.hex }
                                                 : {
                                                     background:
-                                                      "repeating-linear-gradient(-45deg, transparent, transparent 4px, rgba(0,0,0,.08) 4px, rgba(0,0,0,.08) 8px)",
+                                                      "repeating-linear-gradient(-45deg, transparent, transparent 3.3px, rgba(0,0,0,.08) 3.3px, rgba(0,0,0,.08) 6.6px)",
                                                   }
                                             }
                                             onClick={() => {
                                               if (activeTool === "eyedropper") {
                                                 if (color) {
                                                   setSelectedColor(color);
+                                                  setActiveTool("paint");
                                                 }
                                               } else if (
                                                 activeTool === "erase"
@@ -1260,14 +1317,14 @@ function App() {
                                       className="flex items-center space-y-0 flex-nowrap"
                                       key={idx}
                                     >
-                                      <span className="w-8 flex-shrink-0"></span>
+                                      <span className="w-7 flex-shrink-0"></span>
                                       {repeaterGroup.map((repeater, rIdx) => {
                                         const test = Array.from({
                                           length: repeater.start - cursor,
                                         }).map((_, index) => (
                                           <div
                                             key={`row3-blank${index}`}
-                                            className="w-8 flex-shrink-0"
+                                            className="w-7 flex-shrink-0"
                                           ></div>
                                         ));
                                         cursor =
@@ -1277,7 +1334,7 @@ function App() {
                                           <div
                                             style={{
                                               width: `${
-                                                2 * repeaterLength(repeater)
+                                                1.75 * repeaterLength(repeater)
                                               }rem`,
                                             }}
                                             className={`flex items-center justify-center border-l border-r border-b border-gray-800 relative mt-2.5 h-3 flex-shrink-0`}
@@ -1535,7 +1592,7 @@ function App() {
                           <h4 className="scroll-m-20 text-xl font-semibold tracking-tight mb-4">
                             Band Mode
                           </h4>
-                          <div className="grid gap-3">
+                          <div className="grid gap-1.5">
                             <Label htmlFor="band-mode">Mode</Label>
                             <Select
                               value={bandMode}
@@ -1563,25 +1620,31 @@ function App() {
                           <h4 className="scroll-m-20 text-xl font-semibold tracking-tight mb-4">
                             Pattern Information
                           </h4>
-                          <div className="grid gap-3">
-                            <Label htmlFor="pattern-title">Title</Label>
-                            <Input
-                              type="text"
-                              id="pattern-title"
-                              className="w-[480px]"
-                              placeholder="Enter pattern title"
-                              value={patternTitle}
-                              onChange={(e) => setPatternTitle(e.target.value)}
-                            />
-                            <Label htmlFor="creator-name">Creator</Label>
-                            <Input
-                              type="text"
-                              id="creator-name"
-                              className="w-[480px]"
-                              placeholder="Enter creator name"
-                              value={creatorName}
-                              onChange={(e) => setCreatorName(e.target.value)}
-                            />
+                          <div className="flex flex-col gap-4">
+                            <div className="grid gap-1.5">
+                              <Label htmlFor="pattern-title">Title</Label>
+                              <Input
+                                type="text"
+                                id="pattern-title"
+                                className="w-[480px]"
+                                placeholder="Enter pattern title"
+                                value={patternTitle}
+                                onChange={(e) =>
+                                  setPatternTitle(e.target.value)
+                                }
+                              />
+                            </div>
+                            <div className="grid gap-1.5">
+                              <Label htmlFor="creator-name">Creator</Label>
+                              <Input
+                                type="text"
+                                id="creator-name"
+                                className="w-[480px]"
+                                placeholder="Enter creator name"
+                                value={creatorName}
+                                onChange={(e) => setCreatorName(e.target.value)}
+                              />
+                            </div>
                             {/* TODO: Add description field in the future */}
                           </div>
                         </div>
@@ -1590,50 +1653,54 @@ function App() {
                           <h4 className="scroll-m-20 text-xl font-semibold tracking-tight mb-4">
                             Display Options
                           </h4>
-                          <div className="flex items-start gap-3">
-                            <Checkbox
-                              id="show-shadows"
-                              checked={useShadow}
-                              onClick={() => setUseShadow(!useShadow)}
-                            />
-                            <div className="grid gap-2">
-                              <Label htmlFor="show-shadows">Show shadows</Label>
-                              <p className="text-muted-foreground text-sm">
-                                Simulate a 3D effect in the band preview
-                              </p>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-3 mt-4">
-                            <Label htmlFor="preview-background">
-                              Background
-                            </Label>
-                            <Select
-                              value={previewBackground}
-                              onValueChange={(v) =>
-                                setPreviewBackground(
-                                  v as typeof previewBackground,
-                                )
-                              }
-                            >
-                              <SelectTrigger
-                                id="preview-background"
-                                className="w-[160px]"
+                          <div className="flex flex-col gap-4">
+                            <div className="grid gap-1.5">
+                              <Label htmlFor="preview-background">
+                                Background
+                              </Label>
+                              <Select
+                                value={previewBackground}
+                                onValueChange={(v) =>
+                                  setPreviewBackground(
+                                    v as typeof previewBackground,
+                                  )
+                                }
                               >
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="light-wood">
-                                  Light Wood
-                                </SelectItem>
-                                <SelectItem value="medium-wood">
-                                  Medium Wood
-                                </SelectItem>
-                                <SelectItem value="dark-wood">
-                                  Dark Wood
-                                </SelectItem>
-                                <SelectItem value="plain">Plain</SelectItem>
-                              </SelectContent>
-                            </Select>
+                                <SelectTrigger
+                                  id="preview-background"
+                                  className="w-[240px]"
+                                >
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="light-wood">
+                                    Light Wood
+                                  </SelectItem>
+                                  <SelectItem value="medium-wood">
+                                    Medium Wood
+                                  </SelectItem>
+                                  <SelectItem value="dark-wood">
+                                    Dark Wood
+                                  </SelectItem>
+                                  <SelectItem value="plain">Plain</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div className="flex items-start gap-3">
+                              <Checkbox
+                                id="show-shadows"
+                                checked={useShadow}
+                                onClick={() => setUseShadow(!useShadow)}
+                              />
+                              <div className="grid gap-1.5 leading-none">
+                                <Label htmlFor="show-shadows">
+                                  Show shadows
+                                </Label>
+                                <p className="text-muted-foreground text-sm">
+                                  Simulate a 3D effect in the band preview
+                                </p>
+                              </div>
+                            </div>
                           </div>
                         </div>
                       </div>
